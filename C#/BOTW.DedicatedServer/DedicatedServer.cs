@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using BOTWM.Library;
 using BOTWM.Library.HelperTypes;
 using BOTWM.Library.Settings;
 using BOTWM.Logging;
@@ -11,142 +10,33 @@ namespace BOTWM.DedicatedServer
     public partial class DedicatedServer
     {
 
-        Server.Server server = new Server.Server();
-        List<Command> CommandList = new List<Command>();
-        ConsoleColor commandColors = ConsoleColor.Cyan;
-        Dictionary<string, string> serverVariables = new Dictionary<string, string>();
-        Dictionary<string, List<string>> QuestData = new Dictionary<string, List<string>>();
+        Host _host = new();
+        List<Command> _commandList = new();
+        ConsoleColor _commandColors = ConsoleColor.Cyan;
+        Dictionary<string, string> _serverVariables = new();
+        Dictionary<string, List<string>> _questData = new();
 
         //Dictionary<string, bool[]> Gamemodes = new Dictionary<string, bool[]>();
-        List<ServerSettings> Gamemodes = new List<ServerSettings>();
+        List<ServerSettings> _gamemodes = new();
 
         
 
         
-        public void setup()
+        public void Setup()
         {
-            ServerConfig svConfig = new ServerConfig();
+            var svConfig = new ServerConfig();
+            _host.Initialize(svConfig.Connection.IP, svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, GetServerSettings(svConfig));
+        }
 
-            server.serverStart(svConfig.Connection.IP, svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, GetServerSettings(svConfig));
-
-            server.startListen();
+        public void Run()
+        {
+            _host.Bind();
+            
+            _host.Start();
 
             Logger.LogInformation("Type help to see available commands");
         }
-
-        private ServerSettings GetServerSettings(ServerConfig svConfig)
-        {
-            if (svConfig.Gamemode.DefaultGamemode)
-                return new ServerSettings(svConfig.DefaultGamemode.Name,
-                                          svConfig.DefaultGamemode.EnemySync,
-                                          svConfig.DefaultGamemode.QuestSync,
-                                          svConfig.DefaultGamemode.KorokSync,
-                                          svConfig.DefaultGamemode.TowerSync,
-                                          svConfig.DefaultGamemode.ShrineSync,
-                                          svConfig.DefaultGamemode.LocationSync,
-                                          svConfig.DefaultGamemode.DungeonSync,
-                                          (Gamemode)svConfig.DefaultGamemode.Special);
-
-            bool isGamemode = Logger.LogInput("Are you playing a gamemode? (1 for true, 0 for false): ") == "1" ? true : false;
-
-            if (isGamemode)
-            {
-                Logger.LogInformation("---Available gamemodes---", color: commandColors);
-
-                int counter = 0;
-
-                foreach (ServerSettings Gamemode in Gamemodes)
-                {
-                    Logger.LogInformation($"({counter}) {Gamemode.SettingsName}");
-                    counter++;
-                }
-
-                int optionSelected = -1;
-
-                while (optionSelected == -1)
-                {
-                    if (!Int32.TryParse(Logger.LogInput("Type the number corresponding to the gamemode you want to play: "), out optionSelected))
-                    {
-                        Logger.LogError($"Invalid gamemode. Correct values go from 0 to {Gamemodes.Count() - 1}");
-                        continue;
-                    }
-                    else
-                    {
-                        if (optionSelected > Gamemodes.Count() - 1 || optionSelected < 0)
-                        {
-                            Logger.LogError($"Invalid gamemode. Correct values go from 0 to {Gamemodes.Count() - 1}");
-                            optionSelected = -1;
-                            continue;
-                        }
-
-                        Logger.LogInformation($"Selected gamemode {Gamemodes[optionSelected].SettingsName}", color: commandColors);
-
-                        return Gamemodes[optionSelected];
-                    }
-                }
-            }
-
-            //V | K | T | O | C | L | D
-
-            bool enemySync = InputToBoolean("Enemy sync (1 for true, 0 for false): ");
-            bool questSync = InputToBoolean("Quest sync (1 for true, 0 for false): ");
-            bool korokSync = InputToBoolean("Korok sync (1 for true, 0 for false): ");
-            bool towerSync = InputToBoolean("Tower sync (1 for true, 0 for false): ");
-            bool shrineSync = InputToBoolean("Shrine sync (1 for true, 0 for false): ");
-            bool locationSync = InputToBoolean("Location sync (1 for true, 0 for false): ");
-            bool dungeonSync = InputToBoolean("Dungeon sync (1 for true, 0 for false): ");
-            string GMInput = Logger.LogInput("Gamemode selection (0 for no gamemode, 1 for Hunter vs Speedrunner, 2 for DeathSwap): ");
-
-            Gamemode GM = Gamemode.NoGamemode;
-
-            if (Int32.TryParse(GMInput, out int value))
-            {
-                if (value == 1)
-                    GM = Gamemode.HunterVsSpeedrunner;
-                if (value == 2)
-                    GM = Gamemode.DeathSwap;
-            }
-
-            ServerSettings selectedServerSettings = new ServerSettings("Custom", enemySync, questSync, korokSync, towerSync, shrineSync, locationSync, dungeonSync, GM);
-
-            bool Match = false;
-
-            foreach (ServerSettings gamemode in Gamemodes)
-            {
-                if (selectedServerSettings.CompareSettings(gamemode))
-                {
-                    Logger.LogWarning($"Your selected server settings match \"{gamemode.SettingsName}\" gamemode. Next time you want to play with these settings, you can select that gamemode.");
-                    Match = true;
-                    selectedServerSettings.SettingsName = gamemode.SettingsName;
-                    break;
-                }
-            }
-
-            if (!Match)
-            {
-                if (Logger.LogInput("Do you wish to save your selected server settings? (1 for yes, 0 for no): ") == "1")
-                {
-                    selectedServerSettings.SettingsName = Logger.LogInput("Select a name for your settings: ");
-
-                    Gamemodes.Add(selectedServerSettings);
-
-                    string GamemodeJson = JsonConvert.SerializeObject(Gamemodes);
-
-                    File.WriteAllText(Directory.GetCurrentDirectory() + "/Gamemodes.json", GamemodeJson);
-
-                    Logger.LogInformation($"Saved gamemode: {selectedServerSettings.SettingsName}");
-                }
-                else
-                {
-                    selectedServerSettings.SettingsName = "Custom";
-                }
-            }
-
-            return selectedServerSettings;
-        }
-
-        private bool InputToBoolean(string message) => Logger.LogInput(message) == "1" ? true : false;
-
+        
         public void process_commands(string input)
         {
             try
@@ -181,7 +71,7 @@ namespace BOTWM.DedicatedServer
                     }
                 }
 
-                foreach (Command command in CommandList)
+                foreach (Command command in _commandList)
                 {
                     if (input_command.ToLower() == command.Name.ToLower() || command.LowerAlternateNames.Contains(input_command.ToLower()))
                     {
@@ -196,7 +86,7 @@ namespace BOTWM.DedicatedServer
 
                             param = param.Substring(0, param.Length - 1);
 
-                            Logger.LogInformation($"{command.Name}{param}: {command.Description}", color: commandColors);
+                            Logger.LogInformation($"{command.Name}{param}: {command.Description}", color: _commandColors);
 
                             foreach (ExtraHelp extraHelp in command.Method.GetCustomAttributes(typeof(ExtraHelp), false))
                             {
@@ -250,18 +140,18 @@ namespace BOTWM.DedicatedServer
             }
         }
         
-        public void setupCommands()
+        public void SetupCommands()
         {
             string AppdataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\BOTWM";
             string fileName = "\\QuestFlagsNames.txt";
 
             string text = File.ReadAllText(AppdataFolder + fileName);
 
-            QuestData = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(text);
+            _questData = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(text);
 
-            serverVariables.Add("time", "t");
-            serverVariables.Add("day", "d");
-            serverVariables.Add("weather", "w");
+            _serverVariables.Add("time", "t");
+            _serverVariables.Add("day", "d");
+            _serverVariables.Add("weather", "w");
 
             //Gamemodes.Add("Game Completion", new bool[] { true, true, true, false, true, true, true, false, false });
             //Gamemodes.Add("Hunter VS Speedrunner", new bool[] { true, true, false, false, true, true, true, false, true });
@@ -269,7 +159,7 @@ namespace BOTWM.DedicatedServer
             //Gamemodes.Add("Bingo???", new bool[] { true, true, false, false, true, true, true, false, false });
             //Gamemodes.Add("Hide n' Seek", new bool[] { true, true, false, false, false, false, false, false, false });
 
-            Gamemodes = JsonConvert.DeserializeObject<List<ServerSettings>>(File.ReadAllText(Directory.GetCurrentDirectory() + "/Gamemodes.json"));
+            _gamemodes = JsonConvert.DeserializeObject<List<ServerSettings>>(File.ReadAllText(Directory.GetCurrentDirectory() + "/Gamemodes.json"));
 
             var methods = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(x => x.GetTypes())
@@ -298,7 +188,7 @@ namespace BOTWM.DedicatedServer
 
                 if (!shouldAdd) continue;
 
-                CommandList.Add(new Command(method, method.Name, ((Description)method.GetCustomAttribute(typeof(Description), false)).description, alternateNames));
+                _commandList.Add(new Command(method, method.Name, ((Description)method.GetCustomAttribute(typeof(Description), false)).description, alternateNames));
             }
         }
 
@@ -322,7 +212,121 @@ namespace BOTWM.DedicatedServer
                 }
             }
         }
-
         
+        //
+        
+
+        private ServerSettings GetServerSettings(ServerConfig svConfig)
+        {
+            if (svConfig.Gamemode.DefaultGamemode)
+                return new ServerSettings(svConfig.DefaultGamemode.Name,
+                                          svConfig.DefaultGamemode.EnemySync,
+                                          svConfig.DefaultGamemode.QuestSync,
+                                          svConfig.DefaultGamemode.KorokSync,
+                                          svConfig.DefaultGamemode.TowerSync,
+                                          svConfig.DefaultGamemode.ShrineSync,
+                                          svConfig.DefaultGamemode.LocationSync,
+                                          svConfig.DefaultGamemode.DungeonSync,
+                                          (Gamemode)svConfig.DefaultGamemode.Special);
+
+            bool isGamemode = Logger.LogInput("Are you playing a gamemode? (1 for true, 0 for false): ") == "1" ? true : false;
+
+            if (isGamemode)
+            {
+                Logger.LogInformation("---Available gamemodes---", color: _commandColors);
+
+                int counter = 0;
+
+                foreach (ServerSettings Gamemode in _gamemodes)
+                {
+                    Logger.LogInformation($"({counter}) {Gamemode.SettingsName}");
+                    counter++;
+                }
+
+                int optionSelected = -1;
+
+                while (optionSelected == -1)
+                {
+                    if (!Int32.TryParse(Logger.LogInput("Type the number corresponding to the gamemode you want to play: "), out optionSelected))
+                    {
+                        Logger.LogError($"Invalid gamemode. Correct values go from 0 to {_gamemodes.Count() - 1}");
+                        continue;
+                    }
+                    else
+                    {
+                        if (optionSelected > _gamemodes.Count() - 1 || optionSelected < 0)
+                        {
+                            Logger.LogError($"Invalid gamemode. Correct values go from 0 to {_gamemodes.Count() - 1}");
+                            optionSelected = -1;
+                            continue;
+                        }
+
+                        Logger.LogInformation($"Selected gamemode {_gamemodes[optionSelected].SettingsName}", color: _commandColors);
+
+                        return _gamemodes[optionSelected];
+                    }
+                }
+            }
+
+            //V | K | T | O | C | L | D
+
+            bool enemySync = InputToBoolean("Enemy sync (1 for true, 0 for false): ");
+            bool questSync = InputToBoolean("Quest sync (1 for true, 0 for false): ");
+            bool korokSync = InputToBoolean("Korok sync (1 for true, 0 for false): ");
+            bool towerSync = InputToBoolean("Tower sync (1 for true, 0 for false): ");
+            bool shrineSync = InputToBoolean("Shrine sync (1 for true, 0 for false): ");
+            bool locationSync = InputToBoolean("Location sync (1 for true, 0 for false): ");
+            bool dungeonSync = InputToBoolean("Dungeon sync (1 for true, 0 for false): ");
+            string GMInput = Logger.LogInput("Gamemode selection (0 for no gamemode, 1 for Hunter vs Speedrunner, 2 for DeathSwap): ");
+
+            Gamemode GM = Gamemode.NoGamemode;
+
+            if (Int32.TryParse(GMInput, out int value))
+            {
+                if (value == 1)
+                    GM = Gamemode.HunterVsSpeedrunner;
+                if (value == 2)
+                    GM = Gamemode.DeathSwap;
+            }
+
+            ServerSettings selectedServerSettings = new ServerSettings("Custom", enemySync, questSync, korokSync, towerSync, shrineSync, locationSync, dungeonSync, GM);
+
+            bool Match = false;
+
+            foreach (ServerSettings gamemode in _gamemodes)
+            {
+                if (selectedServerSettings.CompareSettings(gamemode))
+                {
+                    Logger.LogWarning($"Your selected server settings match \"{gamemode.SettingsName}\" gamemode. Next time you want to play with these settings, you can select that gamemode.");
+                    Match = true;
+                    selectedServerSettings.SettingsName = gamemode.SettingsName;
+                    break;
+                }
+            }
+
+            if (!Match)
+            {
+                if (Logger.LogInput("Do you wish to save your selected server settings? (1 for yes, 0 for no): ") == "1")
+                {
+                    selectedServerSettings.SettingsName = Logger.LogInput("Select a name for your settings: ");
+
+                    _gamemodes.Add(selectedServerSettings);
+
+                    string GamemodeJson = JsonConvert.SerializeObject(_gamemodes);
+
+                    File.WriteAllText(Directory.GetCurrentDirectory() + "/Gamemodes.json", GamemodeJson);
+
+                    Logger.LogInformation($"Saved gamemode: {selectedServerSettings.SettingsName}");
+                }
+                else
+                {
+                    selectedServerSettings.SettingsName = "Custom";
+                }
+            }
+
+            return selectedServerSettings;
+        }
+
+        private bool InputToBoolean(string message) => Logger.LogInput(message) == "1" ? true : false;
     }
 }

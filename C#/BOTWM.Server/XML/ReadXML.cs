@@ -1,9 +1,8 @@
-﻿using System.Reflection;
-using System.Xml;
+﻿using System.Xml;
 
-namespace BOTWM.Server
+namespace BOTWM.Server.XML
 {
-    public static class ReadXML
+    public static class ReadXml
     {
         public static Dictionary<string, Dictionary<string, string>> ReadAnimationFile()
         {

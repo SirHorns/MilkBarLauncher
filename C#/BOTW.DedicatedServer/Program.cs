@@ -23,13 +23,15 @@ try
 
     DedicatedServer.CopyAppdataFiles();
 
-    DedicatedServer.setupCommands();
+    DedicatedServer.SetupCommands();
 
-    DedicatedServer.setup();
+    DedicatedServer.Setup();
+    
+    DedicatedServer.Run();
 
     while (true)
     {
-        string input = Logger.LogInput("");
+        var input = Logger.LogInput("");
         DedicatedServer.process_commands(input);
     }
 }

@@ -14,7 +14,7 @@ using BOTWM.Logging;
 
 namespace BOTWM.Server
 {
-    public class Server
+    public class Host
     {
         bool serverOpen = false;
 
@@ -38,30 +38,45 @@ namespace BOTWM.Server
         public bool ServerLog { get; set; }
 
         Socket listen;
-        Thread listenThread;
+        Thread? listenThread;
         List<Thread> clientThreads = new List<Thread>();
-
-        public bool serverStart(string ip, int port, string password, string description, ServerSettings settings)
+        private string IpAddress;
+        private int Port;
+        private string Password;
+        private string Description; 
+        ServerSettings Settings;
+        
+        
+        public void Initialize(string ip, int port, string password, string description, ServerSettings settings)
         {
 
-            this.Gamemode = settings.SettingsName;
-
-            Dictionary<string, string> ipAddresses = new Dictionary<string, string>();
+            Gamemode = settings.SettingsName;
+            IpAddress = ip;
+            Port = port;
+            Password = password;
+            Description = description;
+            Settings = settings;
+            
+            /*
+            var ipAddresses = new Dictionary<string, string>();
 
             if (ip == "localhost")
             {
                 var host = Dns.GetHostEntry(Dns.GetHostName());
 
-                foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
+                foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
                 {
-                    if (item.OperationalStatus == OperationalStatus.Up)
+                    if (networkInterface.OperationalStatus != OperationalStatus.Up)
                     {
-                        foreach (UnicastIPAddressInformation uip in item.GetIPProperties().UnicastAddresses)
+                        continue;
+                    }
+
+                    var uips = networkInterface.GetIPProperties().UnicastAddresses;
+                    foreach (var uip in uips)
+                    {
+                        if (uip.Address.AddressFamily == AddressFamily.InterNetwork && host.AddressList.Contains(uip.Address))
                         {
-                            if (uip.Address.AddressFamily == AddressFamily.InterNetwork && host.AddressList.Contains(uip.Address))
-                            {
-                                ipAddresses.Add(item.Name.ToString(), uip.Address.ToString());
-                            }
+                            ipAddresses.Add(networkInterface.Name, uip.Address.ToString());
                         }
                     }
                 }
@@ -77,10 +92,10 @@ namespace BOTWM.Server
                 {
                     listen = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
                     listen.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                    string IP = ipAddresses[key].ToString();
+                    var ipAddress = ipAddresses[key];
 
-                    IPEndPoint connect = new IPEndPoint(IPAddress.Parse(IP), port);
-                    listen.Bind(connect);
+                    var ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
+                    listen.Bind(ipEndPoint);
 
                     Logger.LogInformation("Server opened on " + key + ".");
 
@@ -97,29 +112,57 @@ namespace BOTWM.Server
                 }
             }
 
+            return false;*/
+        }
+
+        public bool Bind()
+        {
+            try
+            {
+                listen = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                listen.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+
+                var ipEndPoint = new IPEndPoint(IPAddress.Parse(IpAddress), Port);
+                listen.Bind(ipEndPoint);
+
+                Logger.LogInformation($"Server opened on: {IpAddress}:{Port}");
+
+                ServerData.Startup(IpAddress, Port, Password, Description, Settings);
+
+                serverOpen = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.ToString());
+            }
             return false;
         }
 
-        public void stopServer()
+        public void Start()
+        {
+            listenThread = new Thread(Listen)
+            {
+                IsBackground = true
+            };
+            listenThread.Start();
+        }
+        
+        public void Stop()
         {
             serverOpen = false;
             listen.Close();
 
-            if (listenThread != null)
-                listenThread.Abort();
+            //TODO: implement cancelation tokens
+            listenThread?.Interrupt();
 
-            foreach (Thread clientThread in clientThreads)
-                clientThread.Abort();
+            foreach (var clientThread in clientThreads)
+            {
+                clientThread.Interrupt();
+            }
         }
-
-        public void startListen()
-        {
-            listenThread = new Thread(serverListen);
-            listenThread.IsBackground = true;
-            listenThread.Start();
-        }
-
-        public void serverListen()
+        
+        private void Listen()
         {
             while(true)
             {
@@ -129,13 +172,13 @@ namespace BOTWM.Server
 
                 connection = listen.Accept();
 
-                var clientThread = new Thread(() => handleClient(connection));
+                var clientThread = new Thread(() => HandleClient(connection));
                 clientThread.Start();
                 clientThreads.Add(clientThread);
             }
         }
 
-        public void handleClient(Socket connection)
+        private void HandleClient(Socket connection)
         {
             int SIZE = 10240;
 

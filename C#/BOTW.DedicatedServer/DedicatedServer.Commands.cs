@@ -25,11 +25,11 @@ public partial class DedicatedServer
     [Description("Shows available commands")]
     public void Help()
     {
-        Logger.LogInformation("---Showing available commands---", color: commandColors);
+        Logger.LogInformation("---Showing available commands---", color: _commandColors);
 
         Console.ForegroundColor = ConsoleColor.White;
 
-        foreach (var command in CommandList)
+        foreach (var command in _commandList)
         {
             if (((ServerCommand)command.Method.GetCustomAttribute(typeof(ServerCommand), false)).Debug) continue;
 
@@ -76,7 +76,7 @@ public partial class DedicatedServer
         {
             string spaces = Landmark.Key < 10 ? "  " : Landmark.Key < 100 ? " " : "";
 
-            Logger.LogInformation($"[{Landmark.Key}]{spaces} {Landmark.Value}", color: commandColors);
+            Logger.LogInformation($"[{Landmark.Key}]{spaces} {Landmark.Value}", color: _commandColors);
         }
     }
 
@@ -179,20 +179,20 @@ public partial class DedicatedServer
     [Description("Stops enemy and quest sync")]
     public void Stop()
     {
-        server.isEnemySync = false;
-        server.isQuestSync = false;
+        _host.isEnemySync = false;
+        _host.isQuestSync = false;
 
-        Logger.LogInformation("Deactivated quest and enemy sync", color: commandColors);
+        Logger.LogInformation("Deactivated quest and enemy sync", color: _commandColors);
     }
 
     [ServerCommand]
     [Description("Starts enemy and quest sync")]
     public void Start()
     {
-        server.isEnemySync = true;
-        server.isQuestSync = true;
+        _host.isEnemySync = true;
+        _host.isQuestSync = true;
 
-        Logger.LogInformation("Activated quest and enemy sync", color: commandColors);
+        Logger.LogInformation("Activated quest and enemy sync", color: _commandColors);
     }
 
     [ServerCommand]
@@ -214,7 +214,7 @@ public partial class DedicatedServer
 
             ServerData.DeathSwap.Enabled = true;
 
-            Logger.LogInformation("Enabled death swap.", color: commandColors);
+            Logger.LogInformation("Enabled death swap.", color: _commandColors);
 
             ServerData.DeathSwapMutex.ReleaseMutex();
 
@@ -227,7 +227,7 @@ public partial class DedicatedServer
             ServerData.DeathSwap.Enabled = false;
             ServerData.DeathSwap.Running = false;
 
-            Logger.LogInformation("Disabled death swap.", color: commandColors);
+            Logger.LogInformation("Disabled death swap.", color: _commandColors);
 
             ServerData.DeathSwapMutex.ReleaseMutex();
 
@@ -263,7 +263,7 @@ public partial class DedicatedServer
             ServerData.DeathSwap.ChangeLimits(Lower, Upper, -1, 1);
             ServerData.DeathSwap.CalculateNewLimit();
 
-            Logger.LogInformation($"Set limits to: {Lower}:{Upper}", color: commandColors);
+            Logger.LogInformation($"Set limits to: {Lower}:{Upper}", color: _commandColors);
 
             ServerData.DeathSwapMutex.ReleaseMutex();
 
@@ -281,10 +281,10 @@ public partial class DedicatedServer
 
             Logger.LogInformation(
                 $"Time until next swap: {Math.Truncate(TimeLeft)} min {(int)Math.Round((TimeLeft - Math.Truncate(TimeLeft)) * 60, 0)} sec",
-                color: commandColors);
+                color: _commandColors);
             Logger.LogInformation(
                 $"Current DeathSwap settings => Enabled: {ServerData.DeathSwap.Enabled}, Is random: {ServerData.DeathSwap.TimerLimit.random}{ExtraMessage}",
-                color: commandColors);
+                color: _commandColors);
             return;
         }
         else
@@ -298,7 +298,7 @@ public partial class DedicatedServer
                 //server.DeathSwap.TimerLimit.random = true;
                 ServerData.DeathSwap.ChangeLimits(-1, -1, NewValue, 0);
 
-                Logger.LogInformation($"Set death swap timer to {NewValue}", color: commandColors);
+                Logger.LogInformation($"Set death swap timer to {NewValue}", color: _commandColors);
 
                 ServerData.DeathSwapMutex.ReleaseMutex();
 
@@ -323,7 +323,7 @@ public partial class DedicatedServer
 
         if (time == "" || time == "-1")
         {
-            Time = server.GlyphTime;
+            Time = _host.GlyphTime;
         }
         else
         {
@@ -340,7 +340,7 @@ public partial class DedicatedServer
 
         if (distance == "" || distance == "-1")
         {
-            Distance = server.GlyphDistance;
+            Distance = _host.GlyphDistance;
         }
         else
         {
@@ -355,10 +355,10 @@ public partial class DedicatedServer
             }
         }
 
-        server.GlyphTime = Time;
-        server.GlyphDistance = Distance;
+        _host.GlyphTime = Time;
+        _host.GlyphDistance = Distance;
 
-        Logger.LogInformation($"Changed the{string.Join("and", message)}", color: commandColors);
+        Logger.LogInformation($"Changed the{string.Join("and", message)}", color: _commandColors);
     }
 
     [ServerCommand(true)]
@@ -366,11 +366,11 @@ public partial class DedicatedServer
     [AlternateName("_H")]
     public void _Help()
     {
-        Logger.LogInformation("---Showing available debug commands---", color: commandColors);
+        Logger.LogInformation("---Showing available debug commands---", color: _commandColors);
 
         Console.ForegroundColor = ConsoleColor.White;
 
-        foreach (var command in CommandList)
+        foreach (var command in _commandList)
         {
             if (!((ServerCommand)command.Method.GetCustomAttribute(typeof(ServerCommand), false)).Debug) continue;
 
@@ -466,7 +466,7 @@ public partial class DedicatedServer
             }
 
             Logger.LogInformation($"Server time is {Hour}:{Minute} and the current day is {serverDay}",
-                color: commandColors);
+                color: _commandColors);
             return;
         }
         else if (action.ToLower() == "set")
@@ -533,7 +533,7 @@ public partial class DedicatedServer
                 }
             }
 
-            Logger.LogInformation($"Time set to {value}", color: commandColors);
+            Logger.LogInformation($"Time set to {value}", color: _commandColors);
         }
         else
         {
@@ -562,7 +562,7 @@ public partial class DedicatedServer
             int ServerWeather = ServerData.WorldData.Weather;
 
             Logger.LogInformation($"Current server weather is {((Weathers)ServerWeather).ToString()}",
-                color: commandColors);
+                color: _commandColors);
             return;
         }
         else if (action.ToLower() == "set")
@@ -572,7 +572,7 @@ public partial class DedicatedServer
             if (value == "auto")
             {
                 ServerData.WorldData.isForcedWeather = false;
-                Logger.LogInformation("Returned weather control back to players.", color: commandColors);
+                Logger.LogInformation("Returned weather control back to players.", color: _commandColors);
                 return;
             }
 
@@ -592,7 +592,7 @@ public partial class DedicatedServer
             ServerData.UpdateWorldData(
                 new WorldDTO() { Time = (float)serverTime, Day = serverDay, Weather = (int)UserWeather }, -1);
 
-            Logger.LogInformation($"Weather set to {value}", color: commandColors);
+            Logger.LogInformation($"Weather set to {value}", color: _commandColors);
             return;
         }
         else
@@ -624,9 +624,9 @@ public partial class DedicatedServer
     {
         foreach (string item in ServerData.QuestData.ServerQuests)
         {
-            if (string.IsNullOrEmpty(search) || (QuestData[item][1].Contains(search)))
+            if (string.IsNullOrEmpty(search) || (_questData[item][1].Contains(search)))
             {
-                Logger.LogInformation($"{QuestData[item][1]}");
+                Logger.LogInformation($"{_questData[item][1]}");
             }
         }
     }
@@ -644,7 +644,7 @@ public partial class DedicatedServer
         {
             ServerData.ProcessExternalQuests(JsonConvert.DeserializeObject<List<string>>(quest));
 
-            Logger.LogInformation("Quests added to the list", color: commandColors);
+            Logger.LogInformation("Quests added to the list", color: _commandColors);
         }
         catch (Exception ex)
         {
@@ -679,7 +679,7 @@ public partial class DedicatedServer
             return;
         }
 
-        Logger.LogInformation($"---Player{playerNumber}'s {property} is---", color: commandColors);
+        Logger.LogInformation($"---Player{playerNumber}'s {property} is---", color: _commandColors);
 
         object playerData = PlayerFields.Where(Fld => Fld.Name.ToLower() == property.ToLower()).First()
             .GetValue(ServerData.PlayerList[PN - 1]);
@@ -716,7 +716,7 @@ public partial class DedicatedServer
     [Description("Prints all properties available players")]
     public void _Properties()
     {
-        Logger.LogInformation($"---Player properties are---", color: commandColors);
+        Logger.LogInformation($"---Player properties are---", color: _commandColors);
 
         FieldInfo[] PlayerFields = typeof(Player).GetFields();
 
@@ -748,9 +748,9 @@ public partial class DedicatedServer
     [Description("Enable/Disable name tags")]
     public void NameTags()
     {
-        server.DisplayNames = !server.DisplayNames;
-        Logger.LogInformation(!server.DisplayNames ? "Deactivated Name Tags" : "Activated Name Tags",
-            color: commandColors);
+        _host.DisplayNames = !_host.DisplayNames;
+        Logger.LogInformation(!_host.DisplayNames ? "Deactivated Name Tags" : "Activated Name Tags",
+            color: _commandColors);
     }
 
     [ServerCommand(true)]
@@ -787,7 +787,7 @@ public partial class DedicatedServer
 
         ServerData.ModelData.AddModel((byte)(PN - 1), playerModel);
 
-        Logger.LogInformation($"Player {PN} model set to {model}", color: commandColors);
+        Logger.LogInformation($"Player {PN} model set to {model}", color: _commandColors);
     }
 
     private int getDigitCount(int number)
