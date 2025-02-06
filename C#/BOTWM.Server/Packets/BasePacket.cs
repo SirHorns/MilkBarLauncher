@@ -19,11 +19,19 @@ public class BasePacket
 
     public void Read(byte[] rawBytes)
     {
-        Length = rawBytes.Length;
-        RawBytes = rawBytes;
-        var reader = new BufferReader(rawBytes);
-        ReadHeader(reader);
-        ReadBody(reader);
+        try
+        {
+            Length = rawBytes.Length;
+            RawBytes = rawBytes;
+            var reader = new BufferReader(rawBytes);
+            ReadHeader(reader);
+            ReadBody(reader);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     public virtual void ReadHeader(BufferReader reader)
@@ -47,6 +55,7 @@ public class BasePacket
                 packet = new ConnectPacket(rawBytes);
                 break;
             case MessageTypes.Update:
+                packet = new UpdatePacket(rawBytes);
                 break;
             case MessageTypes.Disconnect:
                 packet = new DisconnectPacket(rawBytes);

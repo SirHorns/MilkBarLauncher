@@ -34,7 +34,14 @@ namespace BOTWM.Library.JSONBuilder
             switch (messageType)
             {
                 case MessageTypes.Update:
-                    var dto = GetJson(typeof(ClientDTO));
+                    var dto =  new Dictionary<string, object>();
+                    
+                    foreach (var item in  typeof(ClientDTO).GetFields())
+                    {
+                        var res = GetJson(item.FieldType);
+                        dto.Add(item.Name, res);
+                    }
+
                     var serializedJson = JsonConvert.SerializeObject(dto);
                     obj = JsonConvert.DeserializeObject<ClientDTO>(serializedJson);
                     break;
@@ -208,11 +215,6 @@ namespace BOTWM.Library.JSONBuilder
 
                 value = result;
             }
-            /*else if (original == typeof(ClientDTO))
-            {
-                ClientDTO result = new ClientDTO();
-                value = result;
-            }*/
             else
             {
                 var result = new Dictionary<string, object>();

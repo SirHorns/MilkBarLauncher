@@ -8,12 +8,17 @@ namespace BOTWM.Library.DTO
         Far
     }
 
-    public class ClosePlayerDTO
+    public class PlayerBaseDTO
     {
         public byte PlayerNumber;
-        public PlayerStatus Status { get { return PlayerStatus.Close; } }
-        public bool Updated;
         public Vec3f Position;
+        public bool Updated;
+        public CharacterLocation Location;
+    }
+
+    public class ClosePlayerDTO: PlayerBaseDTO
+    {
+        public PlayerStatus Status => PlayerStatus.Close;
         public Quaternion Rotation1;
         public Quaternion Rotation2;
         public Quaternion Rotation3;
@@ -23,20 +28,15 @@ namespace BOTWM.Library.DTO
         public float AtkUp;
         public bool IsEquipped;
         public CharacterEquipment Equipment;
-        public CharacterLocation Location;
         public Vec3f Bomb;
         public Vec3f Bomb2;
         public Vec3f BombCube;
         public Vec3f BombCube2;
     }
 
-    public class FarPlayerDTO
+    public class FarPlayerDTO: PlayerBaseDTO
     {
-        public byte PlayerNumber;
-        public PlayerStatus Status { get { return PlayerStatus.Far; } }
-        public bool Updated;
-        public Vec3f Position;
-        public CharacterLocation Location;
+        public PlayerStatus Status => PlayerStatus.Far;
     }
 
     public class ClientPlayerDTO

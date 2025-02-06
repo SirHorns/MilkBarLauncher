@@ -249,7 +249,7 @@ namespace BOTWM.Server
                             clientMessage = new Tuple<MessageTypes, object>(MessageTypes.Disconnect, disconnect.Reason);
                             break;
                         case UpdatePacket update:
-                            clientMessage = new Tuple<MessageTypes, object>(MessageTypes.Update, update.ClientDto);
+                            clientMessage = new JsonBuilder().BuildFromBytes(buffer); ;//new Tuple<MessageTypes, object>(MessageTypes.Update, update.ClientDto);
                             break;
                         default: 
                             continue;
@@ -352,6 +352,7 @@ namespace BOTWM.Server
                 catch (Exception e)
                 {
                     Logger.LogWarning(e.Message);
+                    throw;
                 }
             }
         }
