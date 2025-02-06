@@ -1,5 +1,5 @@
-﻿using BOTW.DedicatedServer;
-using BOTW.Logging;
+﻿using BOTW.Logging;
+using BOTWM.DedicatedServer;
 
 try
 {

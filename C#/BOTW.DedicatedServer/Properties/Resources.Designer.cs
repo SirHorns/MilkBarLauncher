@@ -8,10 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BOTW.DedicatedServer.Properties {
-    using System;
-    
-    
+namespace BOTWM.DedicatedServer.Properties {
     /// <summary>
     ///   Clase de recurso fuertemente tipado, para buscar cadenas traducidas, etc.
     /// </summary>
