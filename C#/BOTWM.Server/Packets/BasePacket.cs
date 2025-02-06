@@ -9,45 +9,50 @@ public class BasePacket
     public int Length { get; set; }
     public byte[] RawBytes { get; set; }
 
+    public BasePacket() {}
+    
+    public BasePacket(byte[] bytes)
+    {
+        RawBytes = bytes;
+        Read(bytes);
+    }
+
     public void Read(byte[] rawBytes)
     {
         Length = rawBytes.Length;
         RawBytes = rawBytes;
-        
-        ReadHeader(rawBytes);
-        ReadBytes(rawBytes);
-    }
-    
-    public virtual void ReadHeader(byte[] rawBytes)
-    {
-        MessageType = (MessageTypes)PacketBytesIo.ReadByte(rawBytes);
-    }
-    
-    public virtual void ReadBytes(byte[] rawBytes)
-    {
-        
+        var reader = new BufferReader(rawBytes);
+        ReadHeader(reader);
+        ReadBody(reader);
     }
 
-    public static BasePacket Create(byte[] rawBytes)
+    public virtual void ReadHeader(BufferReader reader)
+    {
+        MessageType = (MessageTypes)reader.ReadByte();
+    }
+    
+    public virtual void ReadBody(BufferReader reader) { }
+
+    public static BasePacket? Create(byte[] rawBytes)
     {
         var type = (MessageTypes)PacketBytesIo.ReadByte(rawBytes);
-        BasePacket packet = null;
+        BasePacket? packet = null;
 
         switch (type)
         {
-            case MessageTypes.error:
-                break;
             case MessageTypes.ping:
+                packet = new PingPacket(rawBytes);
                 break;
             case MessageTypes.connect:
-                packet = new ConnectPacket();
-                packet.Read(rawBytes);
+                packet = new ConnectPacket(rawBytes);
                 break;
             case MessageTypes.update:
                 break;
             case MessageTypes.disconnect:
+                packet = new DisconnectPacket(rawBytes);
                 break;
-            default:
+            case MessageTypes.error:
+            default: 
                 break;
         }
         return packet;

@@ -6,27 +6,30 @@ namespace BOTWM.Server.Packets;
 
 public class ConnectPacket: BasePacket
 {
-    public int PlayerId { get; set; }
-    public string PlayerName { get; set; }
+    
     public ConnectDTO ConnectDTO { get; set; }
+    public string Json { get; set; }
 
-    public override void ReadBytes(byte[] rawBytes)
+    public ConnectPacket() : base() { }
+    public ConnectPacket(byte[] bytes) : base(bytes) { }
+    
+    public override void ReadBody(BufferReader reader)
     {
         ConnectDTO = new ConnectDTO();
 
-        int stringSize = PacketBytesIo.ReadByte(rawBytes);
-        ConnectDTO.Name = Encoding.UTF8.GetString(PacketBytesIo.ReadBytes(rawBytes, stringSize));
+        int stringSize = reader.ReadByte();
+        ConnectDTO.Name = Encoding.UTF8.GetString(reader.ReadBytes(stringSize));
 
-        stringSize = PacketBytesIo.ReadByte(rawBytes);
-        ConnectDTO.Password = Encoding.UTF8.GetString(PacketBytesIo.ReadBytes(rawBytes, stringSize));
+        stringSize = reader.ReadByte();
+        ConnectDTO.Password = Encoding.UTF8.GetString(reader.ReadBytes(stringSize));
 
         ConnectDTO.ModelData = new ModelDataDTO();
 
-        stringSize = PacketBytesIo.ReadByte(rawBytes);
-        ConnectDTO.ModelData.ModelType = byte.Parse(Encoding.UTF8.GetString(PacketBytesIo.ReadBytes(rawBytes, stringSize)));
+        stringSize = reader.ReadByte();
+        ConnectDTO.ModelData.ModelType = byte.Parse(Encoding.UTF8.GetString(reader.ReadBytes(stringSize)));
 
-        stringSize = BitConverter.ToInt16(PacketBytesIo.ReadBytes(rawBytes, 2), 0);
-        string model = Encoding.UTF8.GetString(PacketBytesIo.ReadBytes(rawBytes, stringSize));
+        stringSize = BitConverter.ToInt16(reader.ReadBytes(2), 0);
+        var model = Encoding.UTF8.GetString(reader.ReadBytes(stringSize));
 
         if(ConnectDTO.ModelData.ModelType < 2)
         {
@@ -35,8 +38,11 @@ public class ConnectPacket: BasePacket
         }
         else
         {
+            var mii = JsonConvert.DeserializeObject<BumiiDTO>(model) ?? new BumiiDTO();
             ConnectDTO.ModelData.Model = "";
-            ConnectDTO.ModelData.Mii = JsonConvert.DeserializeObject<BumiiDTO>(model);
+            ConnectDTO.ModelData.Mii = mii;
         }
+        
+        Json = JsonConvert.SerializeObject(ConnectDTO);
     }
 }
