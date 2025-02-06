@@ -27,29 +27,17 @@ namespace BOTWM.Library.JSONBuilder
         {
             Data = data;
 
-            MessageTypes messageType = (MessageTypes)GetByte();
+            var messageType = (MessageTypes)GetByte();
 
             object? obj = null;
 
-            if (messageType == MessageTypes.connect)
+            switch (messageType)
             {
-                string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ConnectDTO)));
-
-                obj = JsonConvert.DeserializeObject<ConnectDTO>(SerializedJson);
-            }
-            else if (messageType == MessageTypes.update)
-            {
-                string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ClientDTO)));
-
-                obj = JsonConvert.DeserializeObject<ClientDTO>(SerializedJson);
-            }
-            else if(messageType == MessageTypes.ping)
-            {
-                obj = Encoding.UTF8.GetString(Data).Replace("\0", "");
-            }
-            else if(messageType == MessageTypes.disconnect)
-            {
-                obj = Encoding.UTF8.GetString(Data).Replace("\0", "");
+                case MessageTypes.Update:
+                    var dto = GetJson(typeof(ClientDTO));
+                    var serializedJson = JsonConvert.SerializeObject(dto);
+                    obj = JsonConvert.DeserializeObject<ClientDTO>(serializedJson);
+                    break;
             }
 
             return new Tuple<MessageTypes, object>(messageType, obj);
@@ -220,52 +208,23 @@ namespace BOTWM.Library.JSONBuilder
 
                 value = result;
             }
-            else if (original == typeof(ConnectDTO))
+            /*else if (original == typeof(ClientDTO))
             {
-                ConnectDTO result = new ConnectDTO();
-
-                int stringSize = GetByte();
-                result.Name = Encoding.UTF8.GetString(GetBytes(stringSize));
-
-                stringSize = GetByte();
-                result.Password = Encoding.UTF8.GetString(GetBytes(stringSize));
-
-                result.ModelData = new ModelDataDTO();
-
-                stringSize = GetByte();
-                result.ModelData.ModelType = byte.Parse(Encoding.UTF8.GetString(GetBytes(stringSize)));
-
-                stringSize = BitConverter.ToInt16(GetBytes(2), 0);
-                string model = Encoding.UTF8.GetString(GetBytes(stringSize));
-
-                if(result.ModelData.ModelType < 2)
-                {
-                    result.ModelData.Model = model;
-                    result.ModelData.Mii = new BumiiDTO();
-                }
-                else
-                {
-                    result.ModelData.Model = "";
-                    result.ModelData.Mii = JsonConvert.DeserializeObject<BumiiDTO>(model);
-                }
-
+                ClientDTO result = new ClientDTO();
                 value = result;
-            }
+            }*/
             else
             {
-
-                Dictionary<string, object> result = new Dictionary<string, object>();
+                var result = new Dictionary<string, object>();
 
                 foreach (var item in original.GetFields())
                 {
-
                     if (item.Name == "Schedule")
+                    {
                         continue;
-
+                    }
                     var res = GetJson(item.FieldType);
-
                     result.Add(item.Name, res);
-
                 }
 
                 value = result;

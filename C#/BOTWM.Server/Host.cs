@@ -1,16 +1,15 @@
 ﻿using BOTWM.Server.ServerClasses;
 using Newtonsoft.Json;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Diagnostics;
-using BOTWM.Library;
 using BOTWM.Library.DTO;
 using BOTWM.Library.HelperTypes;
 using BOTWM.Library.JSONBuilder;
 using BOTWM.Library.Settings;
 using BOTWM.Logging;
+using BOTWM.Server.Packets;
 
 namespace BOTWM.Server
 {
@@ -164,7 +163,7 @@ namespace BOTWM.Server
 
         private void Listen()
         {
-            while (serverOpen)
+            while (true)
             {
                 socket.Listen(100);
 
@@ -236,7 +235,25 @@ namespace BOTWM.Server
                         break;
                     }
                     
-                    clientMessage = new JsonBuilder().BuildFromBytes(buffer);
+                    var pkt = BasePacket.Create(buffer);
+
+                    switch (pkt)
+                    {
+                        case PingPacket ping:
+                            clientMessage = new Tuple<MessageTypes, object>(MessageTypes.Ping, ping.Password);
+                            break;
+                        case ConnectPacket connect:
+                            clientMessage = new Tuple<MessageTypes, object>(MessageTypes.Connect, connect.ConnectDTO);
+                            break;
+                        case DisconnectPacket disconnect:
+                            clientMessage = new Tuple<MessageTypes, object>(MessageTypes.Disconnect, disconnect.Reason);
+                            break;
+                        case UpdatePacket update:
+                            clientMessage = new Tuple<MessageTypes, object>(MessageTypes.Update, update.ClientDto);
+                            break;
+                        default: 
+                            continue;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -256,9 +273,9 @@ namespace BOTWM.Server
                 {
                     switch (clientMessage.Item1)
                     {
-                        case MessageTypes.error:
+                        case MessageTypes.Error:
                             throw new Exception($"[{playerName}] Error receiving message. Disconnecting player...");
-                        case MessageTypes.ping:
+                        case MessageTypes.Ping:
                             PingDTO pingResult;
 
                             if (ServerData.Configuration.PASSWORD != (string)clientMessage.Item2)
@@ -287,7 +304,7 @@ namespace BOTWM.Server
                             connection.Close();
                             clientConnected = false;
                             break;
-                        case MessageTypes.connect:
+                        case MessageTypes.Connect:
                             var userConfiguration = (ConnectDTO)clientMessage.Item2;
                             var assignationResult = ServerData.TryAssigning(userConfiguration);
 
@@ -306,7 +323,7 @@ namespace BOTWM.Server
 
                             Logger.LogInformation($"Player {userConfiguration.Name} joined the server. Assigned to player {assignationResult.PlayerNumber + 1}.");
                             break;
-                        case MessageTypes.update:
+                        case MessageTypes.Update:
                             ServerData.SetConnection(playerNumber, true);
 
                             var userInformation = (ClientDTO)clientMessage.Item2;
@@ -323,7 +340,7 @@ namespace BOTWM.Server
 
                             ServerData.ClearDeathSwap(playerNumber);
                             break;
-                        case MessageTypes.disconnect:
+                        case MessageTypes.Disconnect:
                             Logger.LogInformation($"Player {ServerData.GetPlayer(playerNumber).Name} disconnected. {(string)clientMessage.Item2}");
                             connection.Close();
                             clientConnected = false;

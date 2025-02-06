@@ -2,9 +2,9 @@
 
 public enum MessageTypes
 {
-    error,
-    ping,
-    connect,
-    update,
-    disconnect
+    Error,
+    Ping,
+    Connect,
+    Update,
+    Disconnect
 }

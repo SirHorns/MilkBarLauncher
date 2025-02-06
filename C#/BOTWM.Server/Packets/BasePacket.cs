@@ -40,18 +40,18 @@ public class BasePacket
 
         switch (type)
         {
-            case MessageTypes.ping:
+            case MessageTypes.Ping:
                 packet = new PingPacket(rawBytes);
                 break;
-            case MessageTypes.connect:
+            case MessageTypes.Connect:
                 packet = new ConnectPacket(rawBytes);
                 break;
-            case MessageTypes.update:
+            case MessageTypes.Update:
                 break;
-            case MessageTypes.disconnect:
+            case MessageTypes.Disconnect:
                 packet = new DisconnectPacket(rawBytes);
                 break;
-            case MessageTypes.error:
+            case MessageTypes.Error:
             default: 
                 break;
         }
