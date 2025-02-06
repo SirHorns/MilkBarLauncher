@@ -1,5 +1,5 @@
-﻿using BOTW.Logging;
-using BOTWM.DedicatedServer;
+﻿using BOTWM.DedicatedServer;
+using BOTWM.Logging;
 
 try
 {
@@ -19,7 +19,7 @@ try
     Console.WriteLine();
 
     DedicatedServer DedicatedServer = new DedicatedServer();
-    Logger.Start(Logger.LogLevelEnum.DEBUG, Logger.LogLevelEnum.WARNING);
+    Logger.Start(LogLevelEnum.DEBUG, LogLevelEnum.WARNING);
 
     DedicatedServer.CopyAppdataFiles();
 

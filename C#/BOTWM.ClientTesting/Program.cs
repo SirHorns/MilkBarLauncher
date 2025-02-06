@@ -1,12 +1,12 @@
 ﻿using BOTWM.ClientTesting;
-using BOTWM.Server.DataTypes;
-using BOTWM.Server.DTO;
-using BOTWM.Server.JSONBuilder;
 using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using BOTWM.Library.DataTypes;
+using BOTWM.Library.DTO;
+using BOTWM.Library.JSONBuilder;
 
 int SIZE = 7168;
 

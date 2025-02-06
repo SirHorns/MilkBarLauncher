@@ -1,6 +1,6 @@
-﻿using BOTWM.Server.DTO;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Diagnostics;
+using BOTWM.Library.DTO;
 
 namespace BOTWM.ClientTesting
 {

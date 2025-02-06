@@ -1,23 +1,7 @@
-﻿namespace BOTW.Logging
+﻿namespace BOTWM.Logging
 {
     public static class Logger
     {
-        public enum LogLevelEnum : int
-        {
-            INFO = 2,
-            WARNING = 3,
-            DEBUG = 4
-        }
-
-        public enum LogWriteLevelEnum : int
-        {
-            CRT = 0,
-            ERR = 1,
-            INF = 2,
-            WRN = 3,
-            DBG = 4
-        }
-
         private static LogLevelEnum CMDLevel;
         private static LogLevelEnum LogLevel;
 

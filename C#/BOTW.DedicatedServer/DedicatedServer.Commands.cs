@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
-using BOTW.Logging;
-using BOTWM.Server.DataTypes;
-using BOTWM.Server.DTO;
+using BOTWM.Library;
+using BOTWM.Library.DataTypes;
+using BOTWM.Library.DTO;
+using BOTWM.Logging;
 using BOTWM.Server.ServerClasses;
 using Newtonsoft.Json;
 

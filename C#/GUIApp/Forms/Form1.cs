@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using System.Text.Json;
-using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using GUIApp.Classes;
+using GUIApp.Connection;
 
-namespace GUIApp
+namespace GUIApp.Forms
 {
 
     public partial class Form1 : Form

@@ -1,10 +1,9 @@
 using System;
-using System.Runtime.InteropServices;
 #if UNITY_EDITOR || UNITY_STANDALONE
 using UnityEngine;
 #endif
 
-namespace Discord
+namespace GUIApp.DiscordGameSDK
 {
 	public partial struct ImageHandle
     {

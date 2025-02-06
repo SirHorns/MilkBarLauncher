@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace Discord
+namespace GUIApp.DiscordGameSDK
 {
     public partial class StorageManager
     {

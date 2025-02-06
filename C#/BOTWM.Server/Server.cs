@@ -1,14 +1,16 @@
-﻿using BOTWM.Server.DTO;
-using BOTWM.Server.HelperTypes;
-using BOTWM.Server.ServerClasses;
+﻿using BOTWM.Server.ServerClasses;
 using Newtonsoft.Json;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
-using BOTWM.Server.JSONBuilder;
 using System.Diagnostics;
-using BOTW.Logging;
+using BOTWM.Library;
+using BOTWM.Library.DTO;
+using BOTWM.Library.HelperTypes;
+using BOTWM.Library.JSONBuilder;
+using BOTWM.Library.Settings;
+using BOTWM.Logging;
 
 namespace BOTWM.Server
 {
@@ -168,7 +170,7 @@ namespace BOTWM.Server
                         continue;
                     }
 
-                    Tuple<MessageType, object> ClientMessage = new JSONBuilder.JSONBuilder().BuildFromBytes(data.ToArray());
+                    Tuple<MessageType, object> ClientMessage = new JSONBuilder().BuildFromBytes(data.ToArray());
 
                     data.Clear();
                     totalLength = 0;
@@ -246,7 +248,7 @@ namespace BOTWM.Server
                         ServerDTO serverDTO = ServerData.GetData(PlayerNumber);
                         serverDTO.NetworkData.Map(this);
 
-                        connection.Send(new JSONBuilder.JSONBuilder().BuildArrayOfBytes(serverDTO));
+                        connection.Send(new JSONBuilder().BuildArrayOfBytes(serverDTO));
 
                         ServerData.ClearDeathSwap(PlayerNumber);
                     }

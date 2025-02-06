@@ -1,4 +1,4 @@
-﻿namespace GUIApp
+﻿namespace GUIApp.Forms
 {
     partial class Form1
     {

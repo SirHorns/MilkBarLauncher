@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
-using System.IO;
-using System.Windows.Forms;
 
-namespace GUIApp
+namespace GUIApp.Classes
 {
     static public class readXML
     {

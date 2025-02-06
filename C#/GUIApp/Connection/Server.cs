@@ -8,9 +8,10 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
-using System.Windows.Forms;
+using GUIApp.Classes;
+using GUIApp.Forms;
 
-namespace GUIApp
+namespace GUIApp.Connection
 {
 
     public class ServerClass

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Discord
+﻿namespace GUIApp.DiscordGameSDK
 {
     static class Constants
     {

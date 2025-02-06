@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using GUIApp.DiscordGameSDK;
 
-namespace GUIApp
+namespace GUIApp.Classes
 {
     public class discordClass
     {
 
-        Discord.Discord discord = new Discord.Discord(946199926847705088, (UInt64)Discord.CreateFlags.Default);
+        Discord discord = new Discord(946199926847705088, (UInt64)CreateFlags.Default);
 
         public discordClass()
         {
             var activityManager = discord.GetActivityManager();
 
-            var activity = new Discord.Activity
+            var activity = new Activity
             {
                 State = "Exclusive version :eyes: ",
                 Assets =

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.IO.Pipes;
 using System.Text;
-using System.Threading.Tasks;
-using System.IO.Pipes;
 using System.Threading;
-using System.Windows.Forms;
+using GUIApp.Forms;
 
-namespace GUIApp
+namespace GUIApp.Connection
 {
     public class NamedPipes
     {
