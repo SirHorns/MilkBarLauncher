@@ -276,7 +276,9 @@ namespace BOTWM.Server.ServerClasses
         static public ConnectResponseDTO TryAssigning(ConnectDTO UserConfiguration)
         {
             if (Configuration.PASSWORD != "" && Configuration.PASSWORD != UserConfiguration.Password)
+            {
                 return new ConnectResponseDTO() { Response = 3 };
+            }
 
             DataMutex.WaitOne(100);
 

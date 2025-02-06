@@ -5,16 +5,6 @@ using Newtonsoft.Json;
 
 namespace BOTWM.Library.JSONBuilder
 {
-
-    public enum MessageType
-    {
-        error,
-        ping,
-        connect,
-        update,
-        disconnect
-    }
-
     public class JSONBuilder
     {
         byte[] Data;
@@ -33,36 +23,36 @@ namespace BOTWM.Library.JSONBuilder
             return Object;
         }
 
-        public Tuple<MessageType, object> BuildFromBytes(byte[] data)
+        public Tuple<MessageTypes, object> BuildFromBytes(byte[] data)
         {
             Data = data;
 
-            MessageType messageType = (MessageType)(int)GetArray(1)[0];
+            MessageTypes messageType = (MessageTypes)GetArray(1)[0];
 
             object Object = null;
 
-            if (messageType == MessageType.connect)
+            if (messageType == MessageTypes.connect)
             {
                 string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ConnectDTO)));
 
                 Object = JsonConvert.DeserializeObject<ConnectDTO>(SerializedJson);
             }
-            else if (messageType == MessageType.update)
+            else if (messageType == MessageTypes.update)
             {
                 string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ClientDTO)));
 
                 Object = JsonConvert.DeserializeObject<ClientDTO>(SerializedJson);
             }
-            else if(messageType == MessageType.ping)
+            else if(messageType == MessageTypes.ping)
             {
                 Object = Encoding.UTF8.GetString(Data).Replace("\0", "");
             }
-            else if(messageType == MessageType.disconnect)
+            else if(messageType == MessageTypes.disconnect)
             {
                 Object = Encoding.UTF8.GetString(Data).Replace("\0", "");
             }
 
-            return new Tuple<MessageType, object>(messageType, Object);
+            return new Tuple<MessageTypes, object>(messageType, Object);
         }
 
         public byte[] BuildArrayOfBytes(object original, bool debug = false)
@@ -82,23 +72,37 @@ namespace BOTWM.Library.JSONBuilder
             object value = null;
 
             if (original == typeof(int))
+            {
                 value = BitConverter.ToInt32(GetArray(4), 0);
+            }
             else if (original == typeof(float))
+            {
                 value = BitConverter.ToSingle(GetArray(4), 0);
+            }
             else if (original == typeof(bool))
+            {
                 value = GetArray(1)[0] == 0x0 ? false : true;
+            }
             else if (original == typeof(byte))
+            {
                 value = GetArray(1)[0];
+            }
             else if (original == typeof(short))
+            {
                 value = BitConverter.ToInt16(GetArray(2), 0);
+            }
             else if (original == typeof(string))
             {
                 int stringSize = GetArray(1)[0];
 
                 if (stringSize == 0)
+                {
                     value = "";
+                }
                 else
+                {
                     value = Encoding.UTF8.GetString(GetArray(stringSize));
+                }
             }
             else if (original == typeof(Vec3f))
             {
@@ -383,12 +387,11 @@ namespace BOTWM.Library.JSONBuilder
         private byte[] GetArray(int length, bool Reverse = true)
         {
 
-            byte[] bytes = Data.Take(length).ToArray();
+            var bytes = Data.Take(length).ToArray();
 
             Data = Data.Skip(length).ToArray();
 
             return bytes;
-
         }
 
         public void AddListData<T>(object original)

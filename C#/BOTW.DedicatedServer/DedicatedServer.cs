@@ -25,7 +25,7 @@ namespace BOTWM.DedicatedServer
         public void Setup()
         {
             var svConfig = new ServerConfig();
-            _host.Initialize(svConfig.Connection.IP, svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, GetServerSettings(svConfig));
+            _host.Initialize("127.0.0.1", svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, GetServerSettings(svConfig));
         }
 
         public void Run()
