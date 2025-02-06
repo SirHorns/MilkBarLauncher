@@ -182,7 +182,7 @@ namespace BOTWM.Server
             }
         }
 
-        public bool TryReceive(Socket clientConnection, byte[] buffer)
+        private bool TryReceive(Socket clientConnection, byte[] buffer)
         {
             var retries = 0;
             var stopwatch = new Stopwatch();
@@ -236,7 +236,7 @@ namespace BOTWM.Server
                         break;
                     }
                     
-                    clientMessage = new JSONBuilder().BuildFromBytes(buffer);
+                    clientMessage = new JsonBuilder().BuildFromBytes(buffer);
                 }
                 catch (Exception ex)
                 {
@@ -319,7 +319,7 @@ namespace BOTWM.Server
                             var serverDto = ServerData.GetData(playerNumber);
                             serverDto.NetworkData.Map(this);
 
-                            connection.Send(new JSONBuilder().BuildArrayOfBytes(serverDto));
+                            connection.Send(new JsonBuilder().BuildArrayOfBytes(serverDto));
 
                             ServerData.ClearDeathSwap(playerNumber);
                             break;

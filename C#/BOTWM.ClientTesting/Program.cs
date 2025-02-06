@@ -105,7 +105,7 @@ for (int i = 0; i < PlayerNumber; i++)
     model.Mii = bumii;
 
     List<byte> message = new List<byte>() { 2 };
-    message.AddRange(new JSONBuilder().BuildArrayOfBytes(new ConnectDTO() { Name = $"Taca_A_Xereca_Pra_Mim{i}", Password = "NoPassword", ModelData = model }, true));
+    message.AddRange(new JsonBuilder().BuildArrayOfBytes(new ConnectDTO() { Name = $"Taca_A_Xereca_Pra_Mim{i}", Password = "NoPassword", ModelData = model }, true));
     sendServerMessage(s, message);
 
     string test = Encoding.UTF8.GetString(info);
@@ -174,7 +174,7 @@ while (true)
 
         List<byte> mes = new List<byte>() { 3 };
 
-        mes.AddRange(new JSONBuilder().BuildArrayOfBytes(client, true));
+        mes.AddRange(new JsonBuilder().BuildArrayOfBytes(client, true));
 
         var watch = new System.Diagnostics.Stopwatch();
 
@@ -189,7 +189,7 @@ while (true)
 
         watch.Stop();
 
-        ServerDTO serverData = new JSONBuilder().BuildFromBytesTest(info);
+        ServerDTO serverData = new JsonBuilder().BuildFromBytesTest(info);
 
         if (COPY && serverData.ClosePlayers.Count > 0)
         {

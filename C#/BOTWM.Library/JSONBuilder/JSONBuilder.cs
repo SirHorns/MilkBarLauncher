@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace BOTWM.Library.JSONBuilder
 {
-    public class JSONBuilder
+    public class JsonBuilder
     {
         byte[] Data;
         List<byte> ByteData;
@@ -14,7 +14,7 @@ namespace BOTWM.Library.JSONBuilder
         {
             Data = data;
 
-            GetArray(2);
+            var space = GetBytes(2);
 
             string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ServerDTO)));
 
@@ -27,32 +27,32 @@ namespace BOTWM.Library.JSONBuilder
         {
             Data = data;
 
-            MessageTypes messageType = (MessageTypes)GetArray(1)[0];
+            MessageTypes messageType = (MessageTypes)GetByte();
 
-            object Object = null;
+            object? obj = null;
 
             if (messageType == MessageTypes.connect)
             {
                 string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ConnectDTO)));
 
-                Object = JsonConvert.DeserializeObject<ConnectDTO>(SerializedJson);
+                obj = JsonConvert.DeserializeObject<ConnectDTO>(SerializedJson);
             }
             else if (messageType == MessageTypes.update)
             {
                 string SerializedJson = JsonConvert.SerializeObject(GetJson(typeof(ClientDTO)));
 
-                Object = JsonConvert.DeserializeObject<ClientDTO>(SerializedJson);
+                obj = JsonConvert.DeserializeObject<ClientDTO>(SerializedJson);
             }
             else if(messageType == MessageTypes.ping)
             {
-                Object = Encoding.UTF8.GetString(Data).Replace("\0", "");
+                obj = Encoding.UTF8.GetString(Data).Replace("\0", "");
             }
             else if(messageType == MessageTypes.disconnect)
             {
-                Object = Encoding.UTF8.GetString(Data).Replace("\0", "");
+                obj = Encoding.UTF8.GetString(Data).Replace("\0", "");
             }
 
-            return new Tuple<MessageTypes, object>(messageType, Object);
+            return new Tuple<MessageTypes, object>(messageType, obj);
         }
 
         public byte[] BuildArrayOfBytes(object original, bool debug = false)
@@ -62,38 +62,40 @@ namespace BOTWM.Library.JSONBuilder
             GetByteData(original);
 
             if(!debug)
+            {
                 ByteData.InsertRange(0, BitConverter.GetBytes((short)ByteData.Count));
+            }
 
             return ByteData.ToArray();
         }
 
         private object GetJson(Type original)
         {
-            object value = null;
+            object value;
 
             if (original == typeof(int))
             {
-                value = BitConverter.ToInt32(GetArray(4), 0);
+                value = BitConverter.ToInt32(GetBytes(4), 0);
             }
             else if (original == typeof(float))
             {
-                value = BitConverter.ToSingle(GetArray(4), 0);
+                value = BitConverter.ToSingle(GetBytes(4), 0);
             }
             else if (original == typeof(bool))
             {
-                value = GetArray(1)[0] == 0x0 ? false : true;
+                value = GetByte() == 0x0 ? false : true;
             }
             else if (original == typeof(byte))
             {
-                value = GetArray(1)[0];
+                value = GetByte();
             }
             else if (original == typeof(short))
             {
-                value = BitConverter.ToInt16(GetArray(2), 0);
+                value = BitConverter.ToInt16(GetBytes(2), 0);
             }
             else if (original == typeof(string))
             {
-                int stringSize = GetArray(1)[0];
+                int stringSize = GetByte();
 
                 if (stringSize == 0)
                 {
@@ -101,16 +103,16 @@ namespace BOTWM.Library.JSONBuilder
                 }
                 else
                 {
-                    value = Encoding.UTF8.GetString(GetArray(stringSize));
+                    value = Encoding.UTF8.GetString(GetBytes(stringSize));
                 }
             }
             else if (original == typeof(Vec3f))
             {
                 Vec3f result = new Vec3f();
 
-                result.x = BitConverter.ToSingle(GetArray(4), 0);
-                result.y = BitConverter.ToSingle(GetArray(4), 0);
-                result.z = BitConverter.ToSingle(GetArray(4), 0);
+                result.x = BitConverter.ToSingle(GetBytes(4), 0);
+                result.y = BitConverter.ToSingle(GetBytes(4), 0);
+                result.z = BitConverter.ToSingle(GetBytes(4), 0);
 
                 value = result;
 
@@ -119,10 +121,10 @@ namespace BOTWM.Library.JSONBuilder
             {
                 Quaternion result = new Quaternion();
 
-                result.q1 = BitConverter.ToSingle(GetArray(4), 0);
-                result.q2 = BitConverter.ToSingle(GetArray(4), 0);
-                result.q3 = BitConverter.ToSingle(GetArray(4), 0);
-                result.q4 = BitConverter.ToSingle(GetArray(4), 0);
+                result.q1 = BitConverter.ToSingle(GetBytes(4), 0);
+                result.q2 = BitConverter.ToSingle(GetBytes(4), 0);
+                result.q3 = BitConverter.ToSingle(GetBytes(4), 0);
+                result.q4 = BitConverter.ToSingle(GetBytes(4), 0);
 
                 value = result;
             }
@@ -131,8 +133,8 @@ namespace BOTWM.Library.JSONBuilder
 
                 CharacterLocation result = new CharacterLocation();
 
-                result.Map = GetArray(1)[0];
-                result.Section = GetArray(1)[0];
+                result.Map = GetByte();
+                result.Section = GetByte();
 
                 value = result;
 
@@ -142,13 +144,13 @@ namespace BOTWM.Library.JSONBuilder
 
                 CharacterEquipment result = new CharacterEquipment();
 
-                result.WType = GetArray(1)[0];
-                result.Sword = BitConverter.ToInt16(GetArray(2), 0);
-                result.Shield = BitConverter.ToInt16(GetArray(2), 0);
-                result.Bow = BitConverter.ToInt16(GetArray(2), 0);
-                result.Head = BitConverter.ToInt16(GetArray(2), 0);
-                result.Upper = BitConverter.ToInt16(GetArray(2), 0);
-                result.Lower = BitConverter.ToInt16(GetArray(2), 0);
+                result.WType = GetByte();
+                result.Sword = BitConverter.ToInt16(GetBytes(2), 0);
+                result.Shield = BitConverter.ToInt16(GetBytes(2), 0);
+                result.Bow = BitConverter.ToInt16(GetBytes(2), 0);
+                result.Head = BitConverter.ToInt16(GetBytes(2), 0);
+                result.Upper = BitConverter.ToInt16(GetBytes(2), 0);
+                result.Lower = BitConverter.ToInt16(GetBytes(2), 0);
 
                 value = result;
 
@@ -156,7 +158,7 @@ namespace BOTWM.Library.JSONBuilder
             else if (original.IsGenericType && typeof(System.Collections.IList).IsAssignableFrom(original))
             {
 
-                int ListSize = GetArray(1)[0];
+                int ListSize = GetByte();
 
                 List<object> result = new List<object>();
 
@@ -171,22 +173,22 @@ namespace BOTWM.Library.JSONBuilder
             }
             else if (original == typeof(Dictionary<byte, ModelDataDTO>))
             {
-                int DictionarySize = GetArray(1)[0];
+                int DictionarySize = GetByte();
 
                 Dictionary<object, object> result = new Dictionary<object, object>();
 
                 for (int i = 0; i < DictionarySize; i++)
                 {
-                    byte Key = GetArray(1)[0];
+                    byte Key = GetByte();
 
                     ModelDataDTO modelData = new ModelDataDTO();
 
-                    modelData.ModelType = GetArray(1)[0];
+                    modelData.ModelType = GetByte();
 
                     if (modelData.ModelType < 2)
                     {
-                        byte stringSize = GetArray(1)[0];
-                        string model = Encoding.UTF8.GetString(GetArray(stringSize));
+                        byte stringSize = GetByte();
+                        string model = Encoding.UTF8.GetString(GetBytes(stringSize));
                         modelData.Model = model;
                         modelData.Mii = new BumiiDTO();
                     }
@@ -204,7 +206,7 @@ namespace BOTWM.Library.JSONBuilder
             }
             else if (original.IsGenericType && typeof(System.Collections.IDictionary).IsAssignableFrom(original))
             {
-                int DictionarySize = GetArray(1)[0];
+                int DictionarySize = GetByte();
 
                 Dictionary<object, object> result = new Dictionary<object, object>();
 
@@ -222,19 +224,19 @@ namespace BOTWM.Library.JSONBuilder
             {
                 ConnectDTO result = new ConnectDTO();
 
-                int stringSize = GetArray(1)[0];
-                result.Name = Encoding.UTF8.GetString(GetArray(stringSize));
+                int stringSize = GetByte();
+                result.Name = Encoding.UTF8.GetString(GetBytes(stringSize));
 
-                stringSize = GetArray(1)[0];
-                result.Password = Encoding.UTF8.GetString(GetArray(stringSize));
+                stringSize = GetByte();
+                result.Password = Encoding.UTF8.GetString(GetBytes(stringSize));
 
                 result.ModelData = new ModelDataDTO();
 
-                stringSize = GetArray(1)[0];
-                result.ModelData.ModelType = byte.Parse(Encoding.UTF8.GetString(GetArray(stringSize)));
+                stringSize = GetByte();
+                result.ModelData.ModelType = byte.Parse(Encoding.UTF8.GetString(GetBytes(stringSize)));
 
-                stringSize = BitConverter.ToInt16(GetArray(2), 0);
-                string model = Encoding.UTF8.GetString(GetArray(stringSize));
+                stringSize = BitConverter.ToInt16(GetBytes(2), 0);
+                string model = Encoding.UTF8.GetString(GetBytes(stringSize));
 
                 if(result.ModelData.ModelType < 2)
                 {
@@ -370,11 +372,11 @@ namespace BOTWM.Library.JSONBuilder
             }
             else if (original.GetType().IsGenericType && typeof(System.Collections.IList).IsAssignableFrom(original.GetType()))
             {
-                typeof(JSONBuilder).GetMethod("AddListData").MakeGenericMethod(original.GetType().GenericTypeArguments).Invoke(this, new[] { original });
+                typeof(JsonBuilder).GetMethod("AddListData").MakeGenericMethod(original.GetType().GenericTypeArguments).Invoke(this, new[] { original });
             }
             else if (original.GetType().IsGenericType && typeof(System.Collections.IDictionary).IsAssignableFrom(original.GetType()))
             {
-                typeof(JSONBuilder).GetMethod("AddDictData").MakeGenericMethod(original.GetType().GenericTypeArguments).Invoke(this, new[] { original });
+                typeof(JsonBuilder).GetMethod("AddDictData").MakeGenericMethod(original.GetType().GenericTypeArguments).Invoke(this, new[] { original });
             }
             else
             {
@@ -384,7 +386,17 @@ namespace BOTWM.Library.JSONBuilder
 
         }
 
-        private byte[] GetArray(int length, bool Reverse = true)
+        private byte GetByte(bool Reverse = true)
+        {
+
+            var bytes = Data.Take(1).ToArray();
+
+            Data = Data.Skip(1).ToArray();
+
+            return bytes[0];
+        }
+        
+        private byte[] GetBytes(int length, bool Reverse = true)
         {
 
             var bytes = Data.Take(length).ToArray();
