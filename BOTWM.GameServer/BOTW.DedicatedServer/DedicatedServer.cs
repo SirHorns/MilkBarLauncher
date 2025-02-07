@@ -1,5 +1,8 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Reflection;
 using System.Text;
+using BOTWM.Library.DataTypes;
 using BOTWM.Library.DTO;
 using BOTWM.Library.HelperTypes;
 using BOTWM.Library.JSONBuilder;
@@ -7,7 +10,9 @@ using BOTWM.Library.Settings;
 using BOTWM.Logging;
 using BOTWM.Networking;
 using BOTWM.Server;
+using BOTWM.Server.Packets;
 using BOTWM.Server.ServerClasses;
+using MadMilkman.Ini;
 using Newtonsoft.Json;
 
 namespace BOTWM.DedicatedServer
@@ -16,13 +21,16 @@ namespace BOTWM.DedicatedServer
     {
 
         Host _host = new();
+        
+        private bool _initialized = false;
+        
         List<Command> _commandList = new();
         ConsoleColor _commandColors = ConsoleColor.Cyan;
         Dictionary<string, string> _serverVariables = new();
         Dictionary<string, List<string>> _questData = new();
 
         //Dictionary<string, bool[]> Gamemodes = new Dictionary<string, bool[]>();
-        List<ServerSettings> _gamemodes = new();
+        
         ServerSettings Settings;
         ServerData ServerData;
         
@@ -41,26 +49,76 @@ namespace BOTWM.DedicatedServer
         public bool EnemyLog { get; set; }
         public int ClientLog { get; set; }
         public bool ServerLog { get; set; }
-
         
-        public void Setup()
+        Dictionary<string, Vec3f> LandmarkPositions;
+        List<ProphuntLocation> ServerProphuntLocations;
+        List<ServerSettings> GameModes = new();   
+
+        ConcurrentQueue<(Peer, BasePacket)> _packetQueue = new();
+
+        private ServerConfig ServerConfig;
+        
+        public void Initialize()
         {
-            ServerData = new ServerData();
+            if (_initialized)
+            {
+                return;
+            }
+            CopyResourceFiles();
+            
             var svConfig = new ServerConfig();
+            var serverConfigIni = new IniFile();
+            serverConfigIni.Load("ServerConfig.ini");
+            svConfig.LoadIni(serverConfigIni);
+            ServerConfig = svConfig;
+            
+            var json = File.ReadAllText(Directory.GetCurrentDirectory() + "/Resources/Landmarks.json");
+            LandmarkPositions = JsonConvert.DeserializeObject<Dictionary<string, Vec3f>>(json );
+            json = File.ReadAllText(Directory.GetCurrentDirectory() + "/Resources/PropHuntLocations.json");
+            ServerProphuntLocations = JsonConvert.DeserializeObject<List<ProphuntLocation>>(json);
+            json = File.ReadAllText(Directory.GetCurrentDirectory() + "/Resources/Gamemodes.json");
+            GameModes = JsonConvert.DeserializeObject<List<ServerSettings>>(json);
+
+            SetupCommands();
+            
+            ServerData = new ServerData();
+            
+            
+            
+            GameMode = "";//svConfig.Gamemode.ToString();
+            
             Settings = GetServerSettings(svConfig);
             _host.Initialize("127.0.0.1", svConfig.Connection.Port);
-            GameMode = svConfig.Gamemode.ToString();
+            
             ServerData.Startup("127.0.0.1", svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, Settings);
-            _host.OnReceive += Handle;
+            _host.OnPeerReceive += (peer, packet) =>
+            {
+                _packetQueue.Enqueue((peer, packet));
+            };
+            _initialized = true;
         }
 
         public void Run()
         {
-            _host.Bind();
-            
             _host.Start();
+            Task.Run(Loop);
 
             Logger.LogInformation("Type help to see available commands");
+        }
+
+        private async Task Loop()
+        {
+            var stopwatch = new Stopwatch();
+            while (true)
+            {
+                stopwatch.Restart();
+                while (_packetQueue.TryDequeue(out var items))
+                {
+                    Handle(items.Item1, items.Item2);
+                }
+                
+                await Task.Delay(1000);
+            }
         }
         
         public void process_commands(string input)
@@ -165,8 +223,8 @@ namespace BOTWM.DedicatedServer
                 Logger.LogError($"Command failed {ex.ToString()}");
             }
         }
-        
-        public void SetupCommands()
+
+        private void SetupCommands()
         {
             string AppdataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\BOTWM";
             string fileName = "\\QuestFlagsNames.txt";
@@ -185,7 +243,7 @@ namespace BOTWM.DedicatedServer
             //Gamemodes.Add("Bingo???", new bool[] { true, true, false, false, true, true, true, false, false });
             //Gamemodes.Add("Hide n' Seek", new bool[] { true, true, false, false, false, false, false, false, false });
 
-            _gamemodes = JsonConvert.DeserializeObject<List<ServerSettings>>(File.ReadAllText(Directory.GetCurrentDirectory() + "/Gamemodes.json"));
+            
 
             var methods = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(x => x.GetTypes())
@@ -218,10 +276,10 @@ namespace BOTWM.DedicatedServer
             }
         }
 
-        public void CopyAppdataFiles()
+        private void CopyResourceFiles()
         {
-            var workingDir = Directory.GetCurrentDirectory() + "\\BOTWM";
-            var resources = Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(resource => resource.Contains("AppdataFiles")).ToList();
+            var workingDir = Directory.GetCurrentDirectory() + "\\Resources";
+            var resources = Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(resource => resource.Contains("Resources")).ToList();
 
             if (!Directory.Exists(workingDir))
             {
@@ -235,7 +293,13 @@ namespace BOTWM.DedicatedServer
                 {
                     continue;
                 }
-                var output = $"{workingDir}\\{resource.Replace("BOTW.DedicatedServer.AppdataFiles.", "")}";
+                var output = $"{workingDir}\\{resource.Replace("BOTWM.DedicatedServer.Resources.", "")}";
+
+                if (!File.Exists(output))
+                {
+                    continue;
+                }
+                
                 using var appdataFile = new FileStream(output, FileMode.Create);
                 var buffer = new byte[stream.Length + 1];
                 stream.ReadExactly(buffer, 0, Convert.ToInt32(stream.Length));
@@ -267,7 +331,7 @@ namespace BOTWM.DedicatedServer
 
                 int counter = 0;
 
-                foreach (ServerSettings Gamemode in _gamemodes)
+                foreach (ServerSettings Gamemode in GameModes)
                 {
                     Logger.LogInformation($"({counter}) {Gamemode.SettingsName}");
                     counter++;
@@ -279,21 +343,21 @@ namespace BOTWM.DedicatedServer
                 {
                     if (!Int32.TryParse(Logger.LogInput("Type the number corresponding to the gamemode you want to play: "), out optionSelected))
                     {
-                        Logger.LogError($"Invalid gamemode. Correct values go from 0 to {_gamemodes.Count() - 1}");
+                        Logger.LogError($"Invalid gamemode. Correct values go from 0 to {GameModes.Count() - 1}");
                         continue;
                     }
                     else
                     {
-                        if (optionSelected > _gamemodes.Count() - 1 || optionSelected < 0)
+                        if (optionSelected > GameModes.Count() - 1 || optionSelected < 0)
                         {
-                            Logger.LogError($"Invalid gamemode. Correct values go from 0 to {_gamemodes.Count() - 1}");
+                            Logger.LogError($"Invalid gamemode. Correct values go from 0 to {GameModes.Count() - 1}");
                             optionSelected = -1;
                             continue;
                         }
 
-                        Logger.LogInformation($"Selected gamemode {_gamemodes[optionSelected].SettingsName}", color: _commandColors);
+                        Logger.LogInformation($"Selected gamemode {GameModes[optionSelected].SettingsName}", color: _commandColors);
 
-                        return _gamemodes[optionSelected];
+                        return GameModes[optionSelected];
                     }
                 }
             }
@@ -309,21 +373,21 @@ namespace BOTWM.DedicatedServer
             bool dungeonSync = InputToBoolean("Dungeon sync (1 for true, 0 for false): ");
             string GMInput = Logger.LogInput("Gamemode selection (0 for no gamemode, 1 for Hunter vs Speedrunner, 2 for DeathSwap): ");
 
-            var gm = GameModes.NoGamemode;
+            var gm = Library.Settings.GameModes.NoGamemode;
 
             if (Int32.TryParse(GMInput, out int value))
             {
                 if (value == 1)
-                    gm = GameModes.HunterVsSpeedrunner;
+                    gm = Library.Settings.GameModes.HunterVsSpeedrunner;
                 if (value == 2)
-                    gm = GameModes.DeathSwap;
+                    gm = Library.Settings.GameModes.DeathSwap;
             }
 
             ServerSettings selectedServerSettings = new ServerSettings("Custom", enemySync, questSync, korokSync, towerSync, shrineSync, locationSync, dungeonSync, gm);
 
             bool Match = false;
 
-            foreach (ServerSettings gamemode in _gamemodes)
+            foreach (ServerSettings gamemode in GameModes)
             {
                 if (selectedServerSettings.CompareSettings(gamemode))
                 {
@@ -340,9 +404,9 @@ namespace BOTWM.DedicatedServer
                 {
                     selectedServerSettings.SettingsName = Logger.LogInput("Select a name for your settings: ");
 
-                    _gamemodes.Add(selectedServerSettings);
+                    GameModes.Add(selectedServerSettings);
 
-                    string GamemodeJson = JsonConvert.SerializeObject(_gamemodes);
+                    string GamemodeJson = JsonConvert.SerializeObject(GameModes);
 
                     File.WriteAllText(Directory.GetCurrentDirectory() + "/Gamemodes.json", GamemodeJson);
 
@@ -359,14 +423,33 @@ namespace BOTWM.DedicatedServer
 
         private bool InputToBoolean(string message) => Logger.LogInput(message) == "1" ? true : false;
 
-        private void Handle(Peer peer, Tuple<PacketTypes, object>? request)
+        private void Handle(Peer peer, BasePacket packet)
         {
             var socket = peer.Socket;
+            object dto;
+            switch (packet)
+            {
+                case PingPacket ping:
+                    dto = ping.Password;
+                    break;
+                case ConnectPacket connect:
+                    dto = connect.ConnectDTO;
+                    break;
+                case DisconnectPacket disconnect:
+                    dto = disconnect.Reason;
+                    break;
+                case UpdatePacket update:
+                    dto = new JsonBuilder().BuildFromBytes(packet.RawBytes).Item2;
+                    //new Tuple<MessageTypes, object>(MessageTypes.Update, update.ClientDto);
+                    break;
+                default:
+                    return;
+            }
+            
+            
             try
             {
-                var type = request.Item1;
-                var dto = request.Item2;
-                switch (type)
+                switch (packet.PacketType)
                 {
                     case PacketTypes.Error:
                         throw new Exception($"[{peer.PlayerName}] Error receiving message. Disconnecting player...");
@@ -436,9 +519,9 @@ namespace BOTWM.DedicatedServer
 
                         try
                         {
-                            var bytes = new BufferWriter().Write(serverDto);
-                            var bytes2 = new JsonBuilder().BuildArrayOfBytes(serverDto);
-                            peer.Send(bytes2);
+                            var check1 = new BufferWriter().Write(serverDto);
+                            var check2 = new JsonBuilder().BuildArrayOfBytes(serverDto);
+                            peer.Send(check2);
                         }
                         catch (Exception e)
                         {
@@ -450,7 +533,7 @@ namespace BOTWM.DedicatedServer
                         break;
                     case PacketTypes.Disconnect:
                         Logger.LogInformation(
-                            $"Player {ServerData.GetPlayer(peer.PlayerNumber).Name} disconnected. {(string)request.Item2}");
+                            $"Player {ServerData.GetPlayer(peer.PlayerNumber).Name} disconnected. {(string)dto}");
                         socket.Close();
                         peer.Connected = false;
                         ServerData.SetConnection(peer.PlayerNumber, false);

@@ -17,11 +17,9 @@ public static class Program
             var dedicatedServer = new DedicatedServer.DedicatedServer();
             Logger.Start(LogLevelEnum.DEBUG, LogLevelEnum.WARNING);
 
-            dedicatedServer.CopyAppdataFiles();
+            
 
-            dedicatedServer.SetupCommands();
-
-            dedicatedServer.Setup();
+            dedicatedServer.Initialize();
     
             dedicatedServer.Run();
 

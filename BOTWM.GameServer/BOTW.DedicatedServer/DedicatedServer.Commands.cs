@@ -10,15 +10,6 @@ namespace BOTWM.DedicatedServer;
 
 public partial class DedicatedServer
 {
-    Dictionary<string, Vec3f> LandmarkPositions =
-        JsonConvert.DeserializeObject<Dictionary<string, Vec3f>>(
-            File.ReadAllText(Directory.GetCurrentDirectory() + "/Landmarks.json"));
-
-    List<ProphuntLocation> ServerProphuntLocations =
-        JsonConvert.DeserializeObject<List<ProphuntLocation>>(
-            File.ReadAllText(Directory.GetCurrentDirectory() + "/PropHuntLocations.json"));
-
-
     [ServerCommand]
     [AlternateName("Commands")]
     [AlternateName("H")]

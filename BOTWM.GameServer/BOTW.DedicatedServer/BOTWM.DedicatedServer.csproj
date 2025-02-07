@@ -22,18 +22,26 @@
     <None Remove="AppdataFiles\ArmorMapping.txt" />
     <None Remove="AppdataFiles\QuestFlagsNames.txt" />
     <None Remove="ServerConfig.ini" />
+    <None Update="AppdataFiles\Gamemodes.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="AppdataFiles\Landmarks.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="AppdataFiles\PropHuntLocations.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Multiplayer_App_Icon_Server.ico" />
     <Content Include="ServerConfig.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="AppdataFiles\ArmorMapping.txt" />
-    <EmbeddedResource Include="AppdataFiles\QuestFlagsNames.txt" />
+    <EmbeddedResource Include="Resources\ArmorMapping.json" />
+    <EmbeddedResource Include="Resources\QuestFlagsNames.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,21 +55,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Gamemodes.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Landmarks.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="PropHuntLocations.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Remove="Resources\Gamemodes.json" />
+    <EmbeddedResource Include="Resources\Gamemodes.json" />
+    <None Remove="Resources\Landmarks.json" />
+    <EmbeddedResource Include="Resources\Landmarks.json" />
+    <None Remove="Resources\PropHuntLocations.json" />
+    <EmbeddedResource Include="Resources\PropHuntLocations.json" />
   </ItemGroup>
 
 	<PropertyGroup>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<ApplicationIcon>Multiplayer_App_Icon_Server.ico</ApplicationIcon>
 	</PropertyGroup>
 
 </Project>

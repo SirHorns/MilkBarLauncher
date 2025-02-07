@@ -5,10 +5,17 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <ApplicationIcon>..\BOTW.DedicatedServer\Resources\Multiplayer_App_Icon_Server.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\BOTW.DedicatedServer\BOTWM.DedicatedServer.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\BOTW.DedicatedServer\Resources\Multiplayer_App_Icon_Server.ico">
+        <Link>Multiplayer_App_Icon_Server.ico</Link>
+      </None>
     </ItemGroup>
 
 </Project>

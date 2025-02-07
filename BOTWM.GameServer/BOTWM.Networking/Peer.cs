@@ -13,7 +13,7 @@ namespace BOTWM.Server;
 
 public class Peer
 {
-    public delegate void PeerNetEvent(Peer peer, Tuple<PacketTypes, object>? request);
+    public delegate void PeerNetEvent(Peer peer, byte[] bytes);
     int BUFFER_SIZE = 10240;
     
     public Socket Socket;
@@ -23,6 +23,8 @@ public class Peer
     public string PlayerName = "";
     public string Gamemode = "";
     
+    
+    public event PeerNetEvent OnReceive;
     public event PeerNetEvent OnReceiveSuccess;
     public event PeerNetEvent OnReceiveFailed;
 
@@ -34,35 +36,16 @@ public class Peer
             Token.ThrowIfCancellationRequested();
 
             var buffer = new byte[BUFFER_SIZE];
-            Tuple<PacketTypes, object>? clientMessage = null;
-
+            
             try
             {
                 if (!TryReceive(buffer))
                 {
+                    ReceiveFailed();
                     break;
                 }
 
-                var pkt = BasePacket.Create(buffer);
-
-                switch (pkt)
-                {
-                    case PingPacket ping:
-                        clientMessage = new Tuple<PacketTypes, object>(PacketTypes.Ping, ping.Password);
-                        break;
-                    case ConnectPacket connect:
-                        clientMessage = new Tuple<PacketTypes, object>(PacketTypes.Connect, connect.ConnectDTO);
-                        break;
-                    case DisconnectPacket disconnect:
-                        clientMessage = new Tuple<PacketTypes, object>(PacketTypes.Disconnect, disconnect.Reason);
-                        break;
-                    case UpdatePacket update:
-                        clientMessage = new JsonBuilder().BuildFromBytes(buffer);
-                        ; //new Tuple<MessageTypes, object>(MessageTypes.Update, update.ClientDto);
-                        break;
-                    default:
-                        continue;
-                }
+                ReceiveSuccess(buffer);
             }
             catch (Exception ex)
             {
@@ -73,15 +56,7 @@ public class Peer
                 Connected = false;
             }
 
-            if (clientMessage is null)
-            {
-                ReceiveFailed();
-                return;
-            }
-            else
-            {
-                ReceiveSuccess(clientMessage);
-            }
+           
         }
     }
     
@@ -126,9 +101,9 @@ public class Peer
         Socket.Send(bytes);
     }
     
-    private void ReceiveSuccess(Tuple<PacketTypes, object> request)
+    private void ReceiveSuccess(byte[] bytes)
     {
-        OnReceiveSuccess?.Invoke(this, request);
+        OnReceiveSuccess?.Invoke(this, bytes);
     }
     private void ReceiveFailed()
     {

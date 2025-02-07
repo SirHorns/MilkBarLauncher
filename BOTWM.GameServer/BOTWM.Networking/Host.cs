@@ -2,31 +2,51 @@
 using System.Net.Sockets;
 using BOTWM.Library.JSONBuilder;
 using BOTWM.Logging;
+using BOTWM.Server.Packets;
 
 namespace BOTWM.Server
 {
     public class Host
     {
-        public delegate void NetEvent(Peer peer, Tuple<PacketTypes, object>? request);
-        private CancellationTokenSource _cts = new CancellationTokenSource();
+        public delegate void NetEvent(Peer peer, BasePacket packet);
+        private int BUFFER_SIZE = 10240;
+        
+        private CancellationTokenSource _cts;
+        private bool _isRunning;
+        private Task _listenThread;
+        private List<Thread> _peerThreads;
+        private Socket _hostSocket;
+        private string _ipAddress;
+        private int _port;
+        private List<Peer> _peers;
         
         
-        bool IsRunning = false;
-        Thread? listenThread;
-        List<Thread> peerThreads = [];
-        Socket HostSocket;
-        private string IpAddress;
-        private int Port;
-        int BUFFER_SIZE = 10240;
-        private List<Peer> Peers = [];
-        
-        public event NetEvent OnReceive;
+        public event EventHandler<Peer> OnPeerConnect;
+        public event NetEvent OnPeerReceive;
+        public event EventHandler<Peer> OnPeerDisconnect;
 
         public void Initialize(string ip, int port)
         {
-            IpAddress = ip;
-            Port = port;
+            _cts = new CancellationTokenSource();
+            _ipAddress = ip;
+            _port = port;
+            _peerThreads = [];
+            _peers = [];
 
+            try
+            {
+                _hostSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                _hostSocket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                var ipEndPoint = new IPEndPoint(IPAddress.Parse(_ipAddress), _port);
+                _hostSocket.Bind(ipEndPoint);
+                Logger.LogInformation($"Server opened on: {_ipAddress}:{_port}");
+                _isRunning = true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.ToString());
+            }
+            
             /*
             var ipAddresses = new Dictionary<string, string>();
 
@@ -85,95 +105,90 @@ namespace BOTWM.Server
             return false;*/
         }
 
-        public bool Bind()
-        {
-            try
-            {
-                HostSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-                HostSocket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-
-                var ipEndPoint = new IPEndPoint(IPAddress.Parse(IpAddress), Port);
-                HostSocket.Bind(ipEndPoint);
-
-                Logger.LogInformation($"Server opened on: {IpAddress}:{Port}");
-
-                
-
-                IsRunning = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex.ToString());
-            }
-
-            return false;
-        }
-
         public void Start()
         {
             //create main network thread
-            listenThread = new Thread(Listen)
-            {
-                IsBackground = true
-            };
-            listenThread.Start();
+            _listenThread = new Task(Listen);
+            _listenThread.Start();
         }
 
         public void Stop()
         {
-            IsRunning = false;
-            HostSocket.Close();
-
-            //TODO: implement cancelation tokens
-            listenThread?.Interrupt();
-            
+            _isRunning = false;
+            _hostSocket.Close();
             _cts.Cancel();
         }
 
         private void Listen()
         {
-            while (IsRunning)
+            try
             {
-                HostSocket.Listen(100);
-
-                var peerSocket = HostSocket.Accept();
-
-                var peer = new Peer()
+                while (_isRunning)
                 {
-                    Gamemode = "",
-                    Socket = peerSocket,
-                    Token = _cts.Token,
-                };
-
-                peer.OnReceiveSuccess += PeerEvent;
-
-                //create new client thread
-                try
-                {
-                    var peerThread = new Thread(() => peer.Handle());
-                    peerThread.Start();
-                    peerThreads.Add(peerThread);
+                    _cts.Token.ThrowIfCancellationRequested();
+                    _hostSocket.Listen(100);
+                    var socket = _hostSocket.Accept();
+                    OnConnect(socket);
                 }
-                catch (Exception e)
+            }
+            catch (Exception e)
+            {
+                if (e is OperationCanceledException)
                 {
-                    if (e is OperationCanceledException)
-                    {
-                        //ignore
-                    }
-                    else
-                    {
-                        Console.WriteLine(e);
-                        throw; 
-                    }
+                    // ignore
                 }
-                
+                else
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
         }
+        
+        
 
-        private void PeerEvent(Peer peer, Tuple<PacketTypes, object>? request)
+        private void OnConnect(Socket socket)
         {
-            OnReceive?.Invoke(peer, request);
+            var peer = new Peer()
+            {
+                Gamemode = "",
+                Socket = socket,
+                Token = _cts.Token,
+            };
+
+            peer.OnReceiveSuccess += OnReceive;
+            
+            //create new client thread
+            try
+            {
+                var peerThread = new Thread(() => peer.Handle());
+                peerThread.Start();
+                _peerThreads.Add(peerThread);
+            }
+            catch (Exception e)
+            {
+                if (e is OperationCanceledException)
+                {
+                    //ignore
+                }
+                else
+                {
+                    Console.WriteLine(e);
+                    throw; 
+                }
+            }
+            OnPeerConnect?.Invoke(this, peer);
+        }
+
+        private void OnReceive(Peer peer, byte[] bytes)
+        {
+            var pkt = BasePacket.Create(bytes);
+            OnPeerReceive?.Invoke(peer, pkt);
+        }
+        
+        private void OnDisconnect(Peer peer)
+        {
+            OnPeerDisconnect?.Invoke(this, peer);
         }
     }
 }

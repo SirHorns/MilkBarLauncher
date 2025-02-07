@@ -42,17 +42,25 @@ namespace BOTWM.Library.HelperTypes
 
         public ServerConfig()
         {
-            IniFile ini = new IniFile();
-            ini.Load("ServerConfig.ini");
+            
+        }
 
-            foreach(var section in this.GetType().GetFields())
+        public void LoadIni(IniFile iniFile)
+        {
+            
+            foreach(var section in typeof(ServerConfig).GetFields())
             {
-                var field = Activator.CreateInstance(section.FieldType);
+                var obj = Activator.CreateInstance(section.FieldType);
 
                 foreach (var key in section.FieldType.GetFields())
-                    key.SetValue(field, Convert.ChangeType(ini.Sections[section.Name].Keys[key.Name].Value, key.FieldType));
+                {
+                    var value = Convert.ChangeType(
+                        iniFile.Sections[section.Name].Keys[key.Name].Value, 
+                        key.FieldType);
+                    key.SetValue(obj, value);
+                }
 
-                section.SetValue(this, field);
+                section.SetValue(this, obj);
             }
         }
     }

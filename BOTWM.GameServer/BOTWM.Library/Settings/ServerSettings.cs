@@ -28,19 +28,14 @@
 
         public bool CompareSettings(ServerSettings settingsToCompare)
         {
-
-            if (settingsToCompare.EnemySync == this.EnemySync &&
-                settingsToCompare.QuestSyncSettings.Vanilla == this.QuestSyncSettings.Vanilla &&
-                settingsToCompare.QuestSyncSettings.Koroks == this.QuestSyncSettings.Koroks &&
-                settingsToCompare.QuestSyncSettings.Towers == this.QuestSyncSettings.Towers &&
-                settingsToCompare.QuestSyncSettings.Shrines == this.QuestSyncSettings.Shrines &&
-                settingsToCompare.QuestSyncSettings.Locations == this.QuestSyncSettings.Locations &&
-                settingsToCompare.QuestSyncSettings.DivineBeast == this.QuestSyncSettings.DivineBeast &&
-                settingsToCompare.GameMode == this.GameMode)
-                return true;
-
-            return false;
-
+            return settingsToCompare.EnemySync == this.EnemySync &&
+                   settingsToCompare.QuestSyncSettings.Vanilla == this.QuestSyncSettings.Vanilla &&
+                   settingsToCompare.QuestSyncSettings.Koroks == this.QuestSyncSettings.Koroks &&
+                   settingsToCompare.QuestSyncSettings.Towers == this.QuestSyncSettings.Towers &&
+                   settingsToCompare.QuestSyncSettings.Shrines == this.QuestSyncSettings.Shrines &&
+                   settingsToCompare.QuestSyncSettings.Locations == this.QuestSyncSettings.Locations &&
+                   settingsToCompare.QuestSyncSettings.DivineBeast == this.QuestSyncSettings.DivineBeast &&
+                   settingsToCompare.GameMode == this.GameMode;
         }
     }
 }
