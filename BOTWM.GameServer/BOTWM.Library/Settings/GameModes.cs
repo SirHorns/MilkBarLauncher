@@ -1,6 +1,6 @@
 ﻿namespace BOTWM.Library.Settings;
 
-public enum Gamemode
+public enum GameModes
 {
     NoGamemode,
     HunterVsSpeedrunner,

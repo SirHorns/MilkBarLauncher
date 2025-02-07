@@ -23,17 +23,17 @@ namespace BOTWM.Library.JSONBuilder
             return Object;
         }
 
-        public Tuple<MessageTypes, object> BuildFromBytes(byte[] data)
+        public Tuple<PacketTypes, object> BuildFromBytes(byte[] data)
         {
             Data = data;
 
-            var messageType = (MessageTypes)GetByte();
+            var messageType = (PacketTypes)GetByte();
 
             object? obj = null;
 
             switch (messageType)
             {
-                case MessageTypes.Update:
+                case PacketTypes.Update:
                     var dto =  new Dictionary<string, object>();
                     
                     foreach (var item in  typeof(ClientDTO).GetFields())
@@ -47,7 +47,7 @@ namespace BOTWM.Library.JSONBuilder
                     break;
             }
 
-            return new Tuple<MessageTypes, object>(messageType, obj);
+            return new Tuple<PacketTypes, object>(messageType, obj);
         }
 
         public byte[] BuildArrayOfBytes(object original, bool debug = false)
@@ -238,45 +238,45 @@ namespace BOTWM.Library.JSONBuilder
         private void GetByteData(object original)
         {
             if (original.GetType() == typeof(int))
-                AddBytes(BitConverter.GetBytes((int)original));
+                WriteBytes(BitConverter.GetBytes((int)original));
             else if (original.GetType() == typeof(float))
-                AddBytes(BitConverter.GetBytes((float)original));
+                WriteBytes(BitConverter.GetBytes((float)original));
             else if (original.GetType() == typeof(bool))
                 ByteData.Add((bool)original ? (byte)1 : (byte)0);
             else if (original.GetType() == typeof(byte))
                 ByteData.Add((byte)original);
             else if (original.GetType() == typeof(short))
-                AddBytes(BitConverter.GetBytes((short)original));
+                WriteBytes(BitConverter.GetBytes((short)original));
             else if (original.GetType() == typeof(string))
             { 
                 ByteData.Add((byte)((string)original).Length);
-                AddBytes(Encoding.UTF8.GetBytes((string)original), false);
+                WriteBytes(Encoding.UTF8.GetBytes((string)original), false);
             }
             else if(original.GetType() == typeof(ConnectDTO))
             {
                 ConnectDTO origDTO = (ConnectDTO)original;
 
                 ByteData.Add((byte)((string)origDTO.Name).Length);
-                AddBytes(Encoding.UTF8.GetBytes((string)origDTO.Name), false);
+                WriteBytes(Encoding.UTF8.GetBytes((string)origDTO.Name), false);
 
                 ByteData.Add((byte)((string)origDTO.Password).Length);
-                AddBytes(Encoding.UTF8.GetBytes((string)origDTO.Password), false);
+                WriteBytes(Encoding.UTF8.GetBytes((string)origDTO.Password), false);
 
                 string modelType = origDTO.ModelData.ModelType.ToString();
 
                 ByteData.Add((byte)modelType.Length);
-                AddBytes(Encoding.UTF8.GetBytes(modelType), false);
+                WriteBytes(Encoding.UTF8.GetBytes(modelType), false);
 
                 if (origDTO.ModelData.ModelType < 2)
                 { 
-                    AddBytes(BitConverter.GetBytes((short)origDTO.ModelData.Model.Length));
-                    AddBytes(Encoding.UTF8.GetBytes((string)origDTO.ModelData.Model), false);
+                    WriteBytes(BitConverter.GetBytes((short)origDTO.ModelData.Model.Length));
+                    WriteBytes(Encoding.UTF8.GetBytes((string)origDTO.ModelData.Model), false);
                 }
                 else
                 {
                     string MiiData = JsonConvert.SerializeObject(origDTO.ModelData.Mii);
-                    AddBytes(BitConverter.GetBytes((short)MiiData.Length));
-                    AddBytes(Encoding.UTF8.GetBytes(MiiData), false);
+                    WriteBytes(BitConverter.GetBytes((short)MiiData.Length));
+                    WriteBytes(Encoding.UTF8.GetBytes(MiiData), false);
                 }
             }
             else if(original.GetType() == typeof(ModelDataDTO))
@@ -287,7 +287,7 @@ namespace BOTWM.Library.JSONBuilder
                 if(dtoObj.ModelType < 2)
                 {
                     ByteData.Add((byte)(dtoObj.Model).Length);
-                    AddBytes(Encoding.UTF8.GetBytes(dtoObj.Model), false);
+                    WriteBytes(Encoding.UTF8.GetBytes(dtoObj.Model), false);
                 }
                 else
                 {
@@ -298,18 +298,18 @@ namespace BOTWM.Library.JSONBuilder
             {
                 Vec3f originalVec3f = (Vec3f)original;
 
-                AddBytes(BitConverter.GetBytes(originalVec3f.x));
-                AddBytes(BitConverter.GetBytes(originalVec3f.y));
-                AddBytes(BitConverter.GetBytes(originalVec3f.z));
+                WriteBytes(BitConverter.GetBytes(originalVec3f.x));
+                WriteBytes(BitConverter.GetBytes(originalVec3f.y));
+                WriteBytes(BitConverter.GetBytes(originalVec3f.z));
             }
             else if(original.GetType() == typeof(Quaternion))
             {
                 Quaternion originalQuaternion = (Quaternion)original;
 
-                AddBytes(BitConverter.GetBytes(originalQuaternion.q1));
-                AddBytes(BitConverter.GetBytes(originalQuaternion.q2));
-                AddBytes(BitConverter.GetBytes(originalQuaternion.q3));
-                AddBytes(BitConverter.GetBytes(originalQuaternion.q4));
+                WriteBytes(BitConverter.GetBytes(originalQuaternion.q1));
+                WriteBytes(BitConverter.GetBytes(originalQuaternion.q2));
+                WriteBytes(BitConverter.GetBytes(originalQuaternion.q3));
+                WriteBytes(BitConverter.GetBytes(originalQuaternion.q4));
             }
             else if (original.GetType() == typeof(CharacterLocation))
             {
@@ -324,12 +324,12 @@ namespace BOTWM.Library.JSONBuilder
 
                 //AddBytes(BitConverter.GetBytes(originalEquipment.WType));
                 ByteData.Add((byte)originalEquipment.WType);
-                AddBytes(BitConverter.GetBytes(originalEquipment.Sword));
-                AddBytes(BitConverter.GetBytes(originalEquipment.Shield));
-                AddBytes(BitConverter.GetBytes(originalEquipment.Bow));
-                AddBytes(BitConverter.GetBytes(originalEquipment.Head));
-                AddBytes(BitConverter.GetBytes(originalEquipment.Upper));
-                AddBytes(BitConverter.GetBytes(originalEquipment.Lower));
+                WriteBytes(BitConverter.GetBytes(originalEquipment.Sword));
+                WriteBytes(BitConverter.GetBytes(originalEquipment.Shield));
+                WriteBytes(BitConverter.GetBytes(originalEquipment.Bow));
+                WriteBytes(BitConverter.GetBytes(originalEquipment.Head));
+                WriteBytes(BitConverter.GetBytes(originalEquipment.Upper));
+                WriteBytes(BitConverter.GetBytes(originalEquipment.Lower));
             }
             else if (original.GetType().IsGenericType && typeof(System.Collections.IList).IsAssignableFrom(original.GetType()))
             {
@@ -394,7 +394,7 @@ namespace BOTWM.Library.JSONBuilder
             }
         }
 
-        private void AddBytes(byte[] bytes, bool Reverse = true)
+        private void WriteBytes(byte[] bytes, bool Reverse = true)
         {
             ByteData.AddRange(bytes);
         }

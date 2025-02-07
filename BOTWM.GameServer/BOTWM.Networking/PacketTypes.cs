@@ -1,6 +1,6 @@
 ﻿namespace BOTWM.Library.JSONBuilder;
 
-public enum MessageTypes
+public enum PacketTypes
 {
     Error,
     Ping,

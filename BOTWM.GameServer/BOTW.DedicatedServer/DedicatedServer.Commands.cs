@@ -179,8 +179,8 @@ public partial class DedicatedServer
     [Description("Stops enemy and quest sync")]
     public void Stop()
     {
-        _host.isEnemySync = false;
-        _host.isQuestSync = false;
+        isEnemySync = false;
+        isQuestSync = false;
 
         Logger.LogInformation("Deactivated quest and enemy sync", color: _commandColors);
     }
@@ -189,8 +189,8 @@ public partial class DedicatedServer
     [Description("Starts enemy and quest sync")]
     public void Start()
     {
-        _host.isEnemySync = true;
-        _host.isQuestSync = true;
+        isEnemySync = true;
+        isQuestSync = true;
 
         Logger.LogInformation("Activated quest and enemy sync", color: _commandColors);
     }
@@ -323,7 +323,7 @@ public partial class DedicatedServer
 
         if (time == "" || time == "-1")
         {
-            Time = _host.GlyphTime;
+            Time = GlyphTime;
         }
         else
         {
@@ -340,7 +340,7 @@ public partial class DedicatedServer
 
         if (distance == "" || distance == "-1")
         {
-            Distance = _host.GlyphDistance;
+            Distance = GlyphDistance;
         }
         else
         {
@@ -355,8 +355,8 @@ public partial class DedicatedServer
             }
         }
 
-        _host.GlyphTime = Time;
-        _host.GlyphDistance = Distance;
+        GlyphTime = Time;
+        GlyphDistance = Distance;
 
         Logger.LogInformation($"Changed the{string.Join("and", message)}", color: _commandColors);
     }
@@ -748,8 +748,8 @@ public partial class DedicatedServer
     [Description("Enable/Disable name tags")]
     public void NameTags()
     {
-        _host.DisplayNames = !_host.DisplayNames;
-        Logger.LogInformation(!_host.DisplayNames ? "Deactivated Name Tags" : "Activated Name Tags",
+        DisplayNames = !DisplayNames;
+        Logger.LogInformation(!DisplayNames ? "Deactivated Name Tags" : "Activated Name Tags",
             color: _commandColors);
     }
 
@@ -815,7 +815,7 @@ public partial class DedicatedServer
     [AlternateName("PH")]
     public void PropHunt(string state = "", string location = "")
     {
-        try
+        /*try
         {
             bool iState = this.GetProphuntState(state);
 
@@ -846,7 +846,7 @@ public partial class DedicatedServer
             Logger.LogWarning(
                 "<location>: location where prophunt is going to be played. Use PropHuntLocations to retrieve the existing locations for prophunt");
             return;
-        }
+        }*/
     }
 
     private bool GetProphuntState(string state)

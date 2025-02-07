@@ -6,10 +6,10 @@
         public string SettingsName;
 
         public bool EnemySync = false;
-        public Gamemode GameMode;
+        public GameModes GameMode;
         public QuestSettings QuestSyncSettings;
 
-        public ServerSettings(string settingsName, bool enemySync = false, bool vanillaQuests = false, bool korokSync = false, bool towerSync = false, bool shrineSync = false, bool locationSync = false, bool divineBeasts = false, Gamemode gamemode = Gamemode.NoGamemode)
+        public ServerSettings(string settingsName, bool enemySync = false, bool vanillaQuests = false, bool korokSync = false, bool towerSync = false, bool shrineSync = false, bool locationSync = false, bool divineBeasts = false, GameModes gameModes = GameModes.NoGamemode)
         {
             SettingsName = settingsName;
             EnemySync = enemySync;
@@ -23,7 +23,7 @@
                 DivineBeast = divineBeasts
             };
 
-            GameMode = gamemode;
+            GameMode = gameModes;
         }
 
         public bool CompareSettings(ServerSettings settingsToCompare)

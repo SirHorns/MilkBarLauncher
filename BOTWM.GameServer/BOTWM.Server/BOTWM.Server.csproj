@@ -23,6 +23,8 @@
   <ItemGroup>
     
     <ProjectReference Include="..\BOTWM.Library\BOTWM.Library.csproj" />
+    
+    <ProjectReference Include="..\BOTWM.Networking\BOTWM.Networking.csproj" />
   </ItemGroup>
 
   <ItemGroup>

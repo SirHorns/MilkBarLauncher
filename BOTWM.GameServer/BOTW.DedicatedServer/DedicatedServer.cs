@@ -1,8 +1,13 @@
 ﻿using System.Reflection;
+using System.Text;
+using BOTWM.Library.DTO;
 using BOTWM.Library.HelperTypes;
+using BOTWM.Library.JSONBuilder;
 using BOTWM.Library.Settings;
 using BOTWM.Logging;
+using BOTWM.Networking;
 using BOTWM.Server;
+using BOTWM.Server.ServerClasses;
 using Newtonsoft.Json;
 
 namespace BOTWM.DedicatedServer
@@ -18,14 +23,35 @@ namespace BOTWM.DedicatedServer
 
         //Dictionary<string, bool[]> Gamemodes = new Dictionary<string, bool[]>();
         List<ServerSettings> _gamemodes = new();
-
+        ServerSettings Settings;
+        ServerData ServerData;
         
+        public string Version = "0.20.0";
+        public short SerializationRate = 60;
+        public short TargetFPS = 60;
+        public short SleepMultiplier = 1;
+        public bool isLocalTest = false;
+        public bool ischaracterSpawn = true;
+        public bool DisplayNames = true;
+        public short GlyphDistance = 250;
+        public short GlyphTime = 60;
+        public bool isQuestSync = false;
+        public bool isEnemySync = false;
+        public string GameMode = "";
+        public bool EnemyLog { get; set; }
+        public int ClientLog { get; set; }
+        public bool ServerLog { get; set; }
 
         
         public void Setup()
         {
+            ServerData = new ServerData();
             var svConfig = new ServerConfig();
-            _host.Initialize("127.0.0.1", svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, GetServerSettings(svConfig));
+            Settings = GetServerSettings(svConfig);
+            _host.Initialize("127.0.0.1", svConfig.Connection.Port);
+            GameMode = svConfig.Gamemode.ToString();
+            ServerData.Startup("127.0.0.1", svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, Settings);
+            _host.OnReceive += Handle;
         }
 
         public void Run()
@@ -231,7 +257,7 @@ namespace BOTWM.DedicatedServer
                                           svConfig.DefaultGamemode.ShrineSync,
                                           svConfig.DefaultGamemode.LocationSync,
                                           svConfig.DefaultGamemode.DungeonSync,
-                                          (Gamemode)svConfig.DefaultGamemode.Special);
+                                          (GameModes)svConfig.DefaultGamemode.Special);
 
             bool isGamemode = Logger.LogInput("Are you playing a gamemode? (1 for true, 0 for false): ") == "1" ? true : false;
 
@@ -283,17 +309,17 @@ namespace BOTWM.DedicatedServer
             bool dungeonSync = InputToBoolean("Dungeon sync (1 for true, 0 for false): ");
             string GMInput = Logger.LogInput("Gamemode selection (0 for no gamemode, 1 for Hunter vs Speedrunner, 2 for DeathSwap): ");
 
-            Gamemode GM = Gamemode.NoGamemode;
+            var gm = GameModes.NoGamemode;
 
             if (Int32.TryParse(GMInput, out int value))
             {
                 if (value == 1)
-                    GM = Gamemode.HunterVsSpeedrunner;
+                    gm = GameModes.HunterVsSpeedrunner;
                 if (value == 2)
-                    GM = Gamemode.DeathSwap;
+                    gm = GameModes.DeathSwap;
             }
 
-            ServerSettings selectedServerSettings = new ServerSettings("Custom", enemySync, questSync, korokSync, towerSync, shrineSync, locationSync, dungeonSync, GM);
+            ServerSettings selectedServerSettings = new ServerSettings("Custom", enemySync, questSync, korokSync, towerSync, shrineSync, locationSync, dungeonSync, gm);
 
             bool Match = false;
 
@@ -332,5 +358,112 @@ namespace BOTWM.DedicatedServer
         }
 
         private bool InputToBoolean(string message) => Logger.LogInput(message) == "1" ? true : false;
+
+        private void Handle(Peer peer, Tuple<PacketTypes, object>? request)
+        {
+            var socket = peer.Socket;
+            try
+            {
+                var type = request.Item1;
+                var dto = request.Item2;
+                switch (type)
+                {
+                    case PacketTypes.Error:
+                        throw new Exception($"[{peer.PlayerName}] Error receiving message. Disconnecting player...");
+                    case PacketTypes.Ping:
+                        PingDTO pingResult;
+
+                        if (ServerData.Configuration.PASSWORD != (string)dto)
+                        {
+                            pingResult = new PingDTO()
+                            {
+                                CorrectPassword = false,
+                                Description = "",
+                                PlayerList = new NamesDTO(),
+                                GameMode = "",
+                                PlayerLimit = 32
+                            };
+                        }
+                        else
+                        {
+                            pingResult = new PingDTO()
+                            {
+                                CorrectPassword = true,
+                                Description = ServerData.Configuration.DESCRIPTION,
+                                PlayerList = ServerData.GetPlayers(),
+                                GameMode = GameMode,
+                                PlayerLimit = 32
+                            };
+                        }
+
+                        peer.Send(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(pingResult)));
+                        socket.Close();
+                        peer.Connected = false;
+                        break;
+                    case PacketTypes.Connect:
+                        var userConfiguration = (ConnectDTO)dto;
+                        var assignationResult = ServerData.TryAssigning(userConfiguration);
+
+                        if (assignationResult.Response != 1)
+                        {
+                            peer.Send(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(assignationResult)));
+                            socket.Close();
+                            peer.Connected = false;
+                            Logger.LogInformation(
+                                $"Player {userConfiguration.Name} tried to connect but failed with error {assignationResult.Response}");
+                            break;
+                        }
+
+                        peer.PlayerNumber = assignationResult.PlayerNumber;
+                        peer.PlayerName = ServerData.PlayerList[peer.PlayerNumber].Name;
+                        peer.Send(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(assignationResult)));
+
+                        Logger.LogInformation(
+                            $"Player {userConfiguration.Name} joined the server. Assigned to player {assignationResult.PlayerNumber + 1}.");
+                        break;
+                    case PacketTypes.Update:
+                        ServerData.SetConnection(peer.PlayerNumber, true);
+
+                        var userInformation = (ClientDTO)dto;
+
+                        ServerData.UpdateWorldData(userInformation.WorldData, peer.PlayerNumber);
+                        ServerData.UpdatePlayerData(userInformation.PlayerData, peer.PlayerNumber);
+                        ServerData.UpdateEnemyData(userInformation.EnemyData);
+                        ServerData.UpdateQuestData(userInformation.QuestData);
+
+                        var serverDto = ServerData.GetData(peer.PlayerNumber);
+                        serverDto.NetworkData.Map(this);
+
+                        try
+                        {
+                            var bytes = new BufferWriter().Write(serverDto);
+                            var bytes2 = new JsonBuilder().BuildArrayOfBytes(serverDto);
+                            peer.Send(bytes2);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            throw;
+                        }
+
+                        ServerData.ClearDeathSwap(peer.PlayerNumber);
+                        break;
+                    case PacketTypes.Disconnect:
+                        Logger.LogInformation(
+                            $"Player {ServerData.GetPlayer(peer.PlayerNumber).Name} disconnected. {(string)request.Item2}");
+                        socket.Close();
+                        peer.Connected = false;
+                        ServerData.SetConnection(peer.PlayerNumber, false);
+                        break;
+                    default: 
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning(e.Message);
+                throw;
+            }
+        }
     }
 }

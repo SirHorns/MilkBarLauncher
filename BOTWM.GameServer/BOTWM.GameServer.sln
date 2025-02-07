@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BOTWM.Logging", "..\BOTW.Lo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BOTWM.Console", "BOTWM.Console\BOTWM.Console.csproj", "{18976598-25D2-46ED-8681-25ECFFC986A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BOTWM.Networking", "BOTWM.Networking\BOTWM.Networking.csproj", "{7FCB5011-02F6-454E-A408-653CDD817BD5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{18976598-25D2-46ED-8681-25ECFFC986A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18976598-25D2-46ED-8681-25ECFFC986A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18976598-25D2-46ED-8681-25ECFFC986A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FCB5011-02F6-454E-A408-653CDD817BD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FCB5011-02F6-454E-A408-653CDD817BD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FCB5011-02F6-454E-A408-653CDD817BD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FCB5011-02F6-454E-A408-653CDD817BD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

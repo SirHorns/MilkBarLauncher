@@ -7,49 +7,31 @@ using Newtonsoft.Json;
 
 namespace BOTWM.Server.ServerClasses
 {
-    static public class ServerData
+    public class ServerData
     {
-        public struct ServerConfiguration
-        {
-            public string IP;
-            public int PORT;
-            public string PASSWORD;
-            public string DESCRIPTION;
-            public ServerSettings Settings;
-
-            public ServerConfiguration(string ip, int port, string password, string description, ServerSettings settings)
-            {
-                this.IP = ip;
-                this.PORT = port;
-                this.PASSWORD = password;
-                this.DESCRIPTION = description;
-                this.Settings = settings;
-            }
-        }
-
         public const int PLAYERLIMIT = 32;
 
-        static Dictionary<string, string> ArmorMappings;
-        static bool IsEnemySync;
-        static bool IsQuestSync;
+        Dictionary<string, string> ArmorMappings;
+        bool IsEnemySync;
+        bool IsQuestSync;
 
-        public static World WorldData;
-        public static Names NameData;
-        public static Models ModelData;
-        public static List<Player> PlayerList;
-        public static Enemy EnemyData;
-        public static Quests QuestData;
-        public static DeathSwapSettings DeathSwap;
-        public static Teleport TeleportData;
-        public static PropHunt PropHuntData;
-        public static ServerConfiguration Configuration;
-        static List<List<bool>> Updated = new List<List<bool>>();
-        static List<DeathSwapDTO> DeathSwapQueue = new List<DeathSwapDTO>();
+        public World WorldData;
+        public Names NameData;
+        public Models ModelData;
+        public List<Player> PlayerList;
+        public Enemy EnemyData;
+        public Quests QuestData;
+        public DeathSwapSettings DeathSwap;
+        public Teleport TeleportData;
+        //public PropHunt PropHuntData;
+        public ServerConfiguration Configuration;
+        List<List<bool>> Updated = new List<List<bool>>();
+        List<DeathSwapDTO> DeathSwapQueue = new List<DeathSwapDTO>();
 
-        static Mutex DataMutex = new Mutex();
-        public static Mutex DeathSwapMutex = new Mutex();
+        Mutex DataMutex = new Mutex();
+        public Mutex DeathSwapMutex = new Mutex();
 
-        static public void Startup(string ip, int port, string password, string description, ServerSettings settings)
+        public void Startup(string ip, int port, string password, string description, ServerSettings settings)
         {
             WorldData = new World();
             PlayerList = new List<Player>();
@@ -79,12 +61,12 @@ namespace BOTWM.Server.ServerClasses
             Configuration = new ServerConfiguration(ip, port, password, description, settings);
             DeathSwap = new DeathSwapSettings();
             TeleportData = new Teleport(PLAYERLIMIT);
-            PropHuntData = new PropHunt();
+            //PropHuntData = new PropHunt();
         }
 
         #region Update
 
-        static public void UpdateWorldData(WorldDTO userData, int playerNumber)
+        public void UpdateWorldData(WorldDTO userData, int playerNumber)
         {
             DataMutex.WaitOne(100);
 
@@ -110,7 +92,7 @@ namespace BOTWM.Server.ServerClasses
             DataMutex.ReleaseMutex();
         }
 
-        static public void UpdatePlayerData(ClientPlayerDTO userData, int playerNumber)
+        public void UpdatePlayerData(ClientPlayerDTO userData, int playerNumber)
         {
 
             userData.Equipment = ProcessArmors(userData.Equipment);
@@ -125,7 +107,7 @@ namespace BOTWM.Server.ServerClasses
 
             if(playerNumber == 0)
             {
-                if (Configuration.Settings.GameMode == Gamemode.DeathSwap && playerNumber == 0)
+                if (Configuration.Settings.GameMode == GameModes.DeathSwap && playerNumber == 0)
                 {
                     DeathSwapMutex.WaitOne(100);
 
@@ -157,21 +139,21 @@ namespace BOTWM.Server.ServerClasses
             DataMutex.ReleaseMutex();
         }
 
-        static public void UpdateEnemyData(EnemyDTO userData)
+        public void UpdateEnemyData(EnemyDTO userData)
         {
             DataMutex.WaitOne(100);
             EnemyData.Update(userData);
             DataMutex.ReleaseMutex();
         }
 
-        static public void UpdateQuestData(QuestsDTO userData)
+        public void UpdateQuestData(QuestsDTO userData)
         {
             DataMutex.WaitOne(100);
             QuestData.Update(userData);
             DataMutex.ReleaseMutex();
         }
 
-        static public void SetConnection(int playerNumber, bool status)
+        public void SetConnection(int playerNumber, bool status)
         {
             DataMutex.WaitOne(100);
             if (status)
@@ -181,13 +163,13 @@ namespace BOTWM.Server.ServerClasses
                 PlayerList[playerNumber] = new Player((byte)playerNumber);
                 NameData.RemoveName((byte)playerNumber);
                 ModelData.RemoveModel((byte)playerNumber);
-                PropHuntData.Players.Remove((byte)playerNumber);
-                PropHuntData.UpdateStatus();
+               // PropHuntData.Players.Remove((byte)playerNumber);
+                //PropHuntData.UpdateStatus();
             }
             DataMutex.ReleaseMutex();
         }
 
-        static public void ProcessExternalQuests(List<string> Quests)
+        public void ProcessExternalQuests(List<string> Quests)
         {
             DataMutex.WaitOne(100);
             QuestData.ProcessQuests(Quests);
@@ -198,7 +180,7 @@ namespace BOTWM.Server.ServerClasses
 
         #region Get data
 
-        public static ServerDTO GetData(int playerNumber)
+        public ServerDTO GetData(int playerNumber)
         {
             ServerDTO serverInformation = new ServerDTO();
 
@@ -215,7 +197,7 @@ namespace BOTWM.Server.ServerClasses
                 if (!player.Connected)
                     continue;
 
-                if (player.PlayerNumber == playerNumber && (PropHuntData.CurrentPhase == 0 || PropHuntData.Players[(byte)playerNumber].Hunter))
+                if (player.PlayerNumber == playerNumber )//&& (PropHuntData.CurrentPhase == 0 || PropHuntData.Players[(byte)playerNumber].Hunter))
                     continue;
 
                 if (player.Position.GetDistance(PlayerList[playerNumber].Position) >= 100)
@@ -250,19 +232,26 @@ namespace BOTWM.Server.ServerClasses
 
             serverInformation.TeleportData = TeleportData.GetTp(playerNumber);
 
-            if(((byte)PropHuntData.CurrentPhase) > 0)
+            /*if(((byte)PropHuntData.CurrentPhase) > 0)
             {
                 PropHuntData.UpdateStatus();
-            }
-
-            serverInformation.PropHuntData = PropHuntData.GetData((byte)playerNumber);
+            }*/
+            serverInformation.PropHuntData = new PropHuntDTO()
+            {
+                IsHunter = false,
+                IsPlaying = false,
+                Phase = 0,
+                StartingPosition = new Vec3f()
+            };//PropHuntData.GetData((byte)playerNumber);
+            //TODO: Remake Prophun gamemode class so it made of pasta
+            
 
             DataMutex.ReleaseMutex();
 
             return serverInformation;
         }
 
-        public static void ClearDeathSwap(int playerNumber)
+        public void ClearDeathSwap(int playerNumber)
         {
             DeathSwapMutex.WaitOne(100);
             DeathSwapQueue[playerNumber].Phase = 0;
@@ -273,7 +262,7 @@ namespace BOTWM.Server.ServerClasses
 
         #region HelperMethods
 
-        static public ConnectResponseDTO TryAssigning(ConnectDTO UserConfiguration)
+        public ConnectResponseDTO TryAssigning(ConnectDTO UserConfiguration)
         {
             if (Configuration.PASSWORD != "" && Configuration.PASSWORD != UserConfiguration.Password)
             {
@@ -322,7 +311,7 @@ namespace BOTWM.Server.ServerClasses
 
         }
 
-        static public Player GetPlayer(int playerNumber)
+        public Player GetPlayer(int playerNumber)
         {
             DataMutex.WaitOne(100);
             Player result = PlayerList[playerNumber];
@@ -331,7 +320,7 @@ namespace BOTWM.Server.ServerClasses
             return result;
         }
 
-        static public NamesDTO GetPlayers()
+        public NamesDTO GetPlayers()
         {
             return NameData.GetAllPlayers();
         }
@@ -340,7 +329,7 @@ namespace BOTWM.Server.ServerClasses
 
         #region Private methods
 
-        static private CharacterEquipment ProcessArmors(CharacterEquipment EquipmentData)
+        private CharacterEquipment ProcessArmors(CharacterEquipment EquipmentData)
         {
 
             string HeadString = AddZeros(EquipmentData.Head.ToString(), 3);
@@ -359,7 +348,7 @@ namespace BOTWM.Server.ServerClasses
             return EquipmentData;
         }
 
-        static private string AddZeros(string original, int numberOfZeros)
+        private string AddZeros(string original, int numberOfZeros)
         {
             int zeroesToAdd = numberOfZeros - original.Length;
 
@@ -371,7 +360,7 @@ namespace BOTWM.Server.ServerClasses
             return original;
         }
 
-        static private Dictionary<string, string> ReadArmorMappingJson()
+        private Dictionary<string, string> ReadArmorMappingJson()
         {
             string AppdataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\BOTWM";
             string ArmorMappingJson = File.ReadAllText(AppdataFolder + "\\ArmorMapping.txt");
