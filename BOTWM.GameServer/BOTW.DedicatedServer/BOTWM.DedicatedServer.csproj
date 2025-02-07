@@ -35,7 +35,7 @@
 
   <ItemGroup>
     <Content Include="ServerConfig.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

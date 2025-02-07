@@ -83,14 +83,12 @@ namespace BOTWM.DedicatedServer
             
             ServerData = new ServerData();
             
-            
-            
             GameMode = "";//svConfig.Gamemode.ToString();
             
             Settings = GetServerSettings(svConfig);
-            _host.Initialize("127.0.0.1", svConfig.Connection.Port);
+            _host.Initialize(svConfig.Connection.IP, svConfig.Connection.Port);
             
-            ServerData.Startup("127.0.0.1", svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, Settings);
+            ServerData.Startup(svConfig.Connection.IP, svConfig.Connection.Port, svConfig.Connection.Password, svConfig.ServerInformation.Description, Settings);
             _host.OnPeerReceive += (peer, packet) =>
             {
                 _packetQueue.Enqueue((peer, packet));
