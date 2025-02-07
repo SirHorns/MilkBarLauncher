@@ -1,0 +1,1 @@
+[08:56:59] Are you playing a gamemode? (1 for true, 0 for false): 
