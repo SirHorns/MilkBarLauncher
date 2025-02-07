@@ -220,12 +220,12 @@ namespace BOTWM.DedicatedServer
 
         public void CopyAppdataFiles()
         {
-            var appdataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\BOTWM";
+            var workingDir = Directory.GetCurrentDirectory() + "\\BOTWM";
             var resources = Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(resource => resource.Contains("AppdataFiles")).ToList();
 
-            if (!Directory.Exists(appdataFolder))
+            if (!Directory.Exists(workingDir))
             {
-                Directory.CreateDirectory(appdataFolder);
+                Directory.CreateDirectory(workingDir);
             }
 
             foreach (var resource in resources)
@@ -235,7 +235,7 @@ namespace BOTWM.DedicatedServer
                 {
                     continue;
                 }
-                var output = $"{appdataFolder}\\{resource.Replace("BOTW.DedicatedServer.AppdataFiles.", "")}";
+                var output = $"{workingDir}\\{resource.Replace("BOTW.DedicatedServer.AppdataFiles.", "")}";
                 using var appdataFile = new FileStream(output, FileMode.Create);
                 var buffer = new byte[stream.Length + 1];
                 stream.ReadExactly(buffer, 0, Convert.ToInt32(stream.Length));
